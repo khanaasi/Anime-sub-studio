@@ -275,10 +275,11 @@
   <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.1"></script>
   <script>
     const client = new Appwrite.Client()
-      .setEndpoint('https://cloud.appwrite.io/v1')
+      .setEndpoint('https://fra.cloud.appwrite.io/v1')
       .setProject('6a562e7f0030aa778863');
 
     const databases = new Appwrite.Databases(client);
+    const account = new Appwrite.Account(client);
     const DB_ID = '6a562f8a001c9d95454a';
 
     let loadedPosts = [];
@@ -288,12 +289,26 @@
       document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
     }
 
+    // On Page Load: Handle Anonymous sessions automatically to prevent guest connection block
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        await account.get();
+      } catch (e) {
+        try {
+          await account.createAnonymousSession();
+        } catch (err) {
+          console.warn("Guest session failed or bypassed");
+        }
+      }
+    });
+
     async function attemptLogin() {
       const enteredPass = document.getElementById("adminPassInput").value.trim();
       if (!enteredPass) return alert("Enter password");
       
       showSpinner(true);
       try {
+        // Query password from settings collection
         const res = await databases.listDocuments(DB_ID, 'settings', [
           Appwrite.Query.equal('key', 'admin_password')
         ]);
@@ -311,7 +326,7 @@
           alert("Wrong Password!");
         }
       } catch (err) {
-        alert("Database connection failed: " + err.message);
+        alert("Database connection failed: " + err.message + "\n\nTip: Appwrite console me jaakar 'khanaasi.github.io' ko Web Platform zaroor add karein.");
       } finally {
         showSpinner(false);
       }
@@ -745,4 +760,4 @@
     function closeModal() { document.getElementById("modal").style.display = "none"; }
   </script>
 </body>
-    </html>
+  </html>
