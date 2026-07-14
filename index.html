@@ -1,231 +1,600 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Watch Anime Studio - Free Anime Sub/Dub in Hindi</title>
+  
+  <meta name="description" content="Stream or download free Anime Hindi Sub/Dub, Korean Drama (K-Drama), and Chinese Donghua in Hindi. Watch the latest Anime episodes, Movies, and read Manga online for free.">
+  <meta name="keywords" content="Hindi sub anime, Hindi sub series, Hindi sub donghua, Hindi sub doungwa, K drama Hindi sub, Hindi dub movies, Hindi dub series, Hindi dub anime, Hindi sub manga, Chinese anime hindi subbed, Korean drama hindi dubbed, anime in hindi, watch anime online free, free download anime hindi, watch donghua hindi, free manga hindi subbed">
+  <meta name="robots" content="index, follow">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root { 
+      --bg: #09090b; 
+      --header: rgba(18, 18, 22, 0.9); 
+      --card-bg: rgba(22, 22, 26, 0.6);
+      --primary: #e50914; 
+      --primary-glow: rgba(229, 9, 20, 0.35);
+      --text: #ffffff; 
+      --text-muted: #a1a1aa;
+      --border: rgba(255, 255, 255, 0.08); 
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background: var(--bg); color: var(--text); overflow-x: hidden; min-height: 100vh; }
     
-    <!-- MASTER SEO METATAGS -->
-    <title>ASI Anime - Watch Hindi Subbed & Dubbed Anime, K-Drama, Movies</title>
-    <meta name="description" content="Watch your favorite Anime, K-Dramas, Web Series, and Movies in Hindi Sub & Dub for free on ASI Anime Sub Studio.">
-    <meta name="keywords" content="Anime hindi sub, Hindi sub anime, Hindi subbed anime, Anime hindi subbed, K drama Hindi sub, Asi anime, Anime sub studio, download anime in hindi, watch anime online hindi dub, movies hindi sub">
-    <meta name="robots" content="index, follow">
-    <meta name="google-site-verification" content="ND0KTgqSSZEiva4iEnrwKjwKebvFX4s0ugNm4XrRaCA" />
+    .header { 
+      background: var(--header); 
+      padding: 15px 30px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      position: sticky; 
+      top: 0; 
+      z-index: 100; 
+      border-bottom: 1px solid var(--border); 
+      backdrop-filter: blur(12px); 
+    }
+    .header .logo { 
+      font-size: 22px; 
+      font-weight: 900; 
+      color: var(--primary); 
+      cursor: pointer; 
+      text-transform: uppercase; 
+      letter-spacing: 1.5px; 
+    }
+    .search-bar { flex: 1; margin: 0 40px; max-width: 500px; position: relative; }
+    .search-bar input { 
+      width: 100%; 
+      padding: 12px 20px 12px 45px; 
+      border: 1px solid var(--border); 
+      border-radius: 30px; 
+      background: rgba(30, 30, 35, 0.6); 
+      color: white; 
+      font-size: 14px; 
+    }
+    .search-bar i { position: absolute; left: 18px; top: 15px; color: #a1a1aa; }
+    .header-right { display: flex; align-items: center; gap: 15px; }
     
-    <link rel="stylesheet" href="style.css">
-    <!-- FontAwesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    .menu-btn { font-size: 24px; cursor: pointer; color: var(--primary); }
+
+    .sidebar { position: fixed; right: -280px; top: 0; width: 280px; height: 100%; background: rgba(15, 15, 20, 0.98); padding: 30px 20px; transition: 0.3s; z-index: 1000; overflow-y: auto; border-left: 1px solid var(--border); }
+    .sidebar.open { right: 0; }
+    .sidebar h3 { font-size: 20px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; font-weight: 800; }
+    .sidebar a { display: flex; align-items: center; gap: 12px; color: white; padding: 12px 15px; text-decoration: none; margin: 8px 0; border-radius: 8px; font-weight: bold; }
+    .sidebar a:hover { background: rgba(229, 9, 20, 0.1); color: var(--primary); }
+    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 999; display: none; }
+    .overlay.show { display: block; }
+
+    .section-title { padding: 40px 30px 10px 30px; font-size: 26px; text-transform: uppercase; font-weight: 800; }
+    .section-title span { color: var(--primary); }
+    
+    .posts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 25px; padding: 20px 30px; }
+    
+    .post-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; position: relative; cursor: pointer; border: 1px solid var(--border); transition: 0.3s; }
+    .post-card:hover { transform: translateY(-8px); border-color: var(--primary); box-shadow: 0 10px 25px var(--primary-glow); }
+    .post-card img { width: 100%; height: 260px; object-fit: cover; }
+    
+    .fallback-box {
+      width: 100%;
+      height: 260px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      text-align: center;
+      background: linear-gradient(-45deg, #e50914, #121214, #0088cc, #222226);
+      background-size: 400% 400%;
+      animation: gradientShift 10s ease infinite;
+      border-bottom: 1px solid var(--border);
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .fallback-box .cat { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #ffd700; margin-bottom: 12px; font-weight: bold; }
+    .fallback-box .name-style { font-size: 20px; font-weight: 900; line-height: 1.3; color: #ffffff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+
+    .post-card .category-tag { position: absolute; top: 10px; right: 10px; background: var(--primary); color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; }
+    .post-card .title-text { padding: 15px; font-size: 14px; text-align: center; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .detail-page { display: none; padding: 40px 30px; max-width: 1100px; margin: 40px auto; background: rgba(22, 22, 26, 0.8); border-radius: 16px; border: 1px solid var(--border); }
+    .detail-page.active { display: block; }
+    .back-btn { background: none; color: var(--primary); border: 1px solid var(--border); padding: 8px 18px; border-radius: 20px; font-size: 14px; cursor: pointer; margin-bottom: 30px; font-weight: bold; }
+    
+    .detail-header { display: flex; gap: 40px; flex-wrap: wrap; margin-bottom: 40px; }
+    .detail-header img { width: 260px; border-radius: 12px; }
+    
+    .detail-info { flex: 1; min-width: 300px; }
+    .detail-info h2 { font-size: 34px; margin-bottom: 20px; color: var(--primary); font-weight: 900; }
+    .detail-info p { margin-bottom: 14px; font-size: 15px; line-height: 1.7; color: var(--text-muted); }
+    .detail-info p strong { color: white; }
+    
+    .episodes { margin-top: 40px; background: rgba(15, 15, 20, 0.6); padding: 30px; border-radius: 12px; border: 1px solid var(--border); }
+    .episodes h3 { border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 25px; }
+    .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+    .episodes button { background: #1f1f23; color: white; border: 1px solid var(--border); padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .episodes button:hover { background: var(--primary); border-color: var(--primary); transform: translateY(-3px); }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
+    .modal.active { display: flex; }
+    .modal-box { background: #121214; border: 1px solid var(--border); padding: 40px; border-radius: 16px; text-align: center; width: 100%; max-width: 440px; position: relative; }
+    .modal-box h3 { margin-bottom: 15px; color: var(--primary); font-size: 24px; font-weight: 800; }
+    .modal-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 25px; }
+    .modal-box input { width: 100%; padding: 14px; margin-bottom: 15px; background: #1a1a1f; border: 1px solid var(--border); color: white; border-radius: 8px; text-align: center; }
+    .modal-box button { background: var(--primary); color: white; padding: 14px; border: none; border-radius: 8px; margin: 8px 0; cursor: pointer; font-weight: bold; width: 100%; }
+    .close-modal { position: absolute; top: 18px; right: 18px; font-size: 24px; cursor: pointer; color: #777; }
+
+    .seo-tag-cloud {
+      opacity: 0.18;
+      font-size: 11px;
+      text-align: center;
+      padding: 25px;
+      line-height: 1.8;
+      border-top: 1px solid var(--border);
+      margin-top: 50px;
+      letter-spacing: 0.5px;
+      text-transform: capitalize;
+    }
+
+    @media (max-width: 768px) {
+      .header { padding: 12px 15px; flex-wrap: wrap; gap: 12px; }
+      .search-bar { order: 3; margin: 0; width: 100%; flex: 1 1 100%; }
+      .posts-grid { grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 15px; padding: 15px; }
+      .post-card img, .fallback-box { height: 190px; }
+    }
+  </style>
 </head>
 <body>
 
-    <!-- A-Z DIRECTORY SIDEBAR (Upgraded UI) -->
-    <div id="sidebar" class="sidebar">
-        <a href="javascript:void(0)" class="close-btn" onclick="closeNav()">&times;</a>
-        <div class="sidebar-content">
-            <h3 style="color: var(--primary); border-bottom: 1px solid #333; padding-bottom: 10px;"><i class="fas fa-book"></i> A-Z Directory</h3>
-            <div id="all-anime-list-menu">
-                <a href="javascript:void(0)" onclick="showAzList('Anime Sub')"><i class="fas fa-angle-right"></i> Anime (Sub)</a>
-                <a href="javascript:void(0)" onclick="showAzList('Anime Dub')"><i class="fas fa-angle-right"></i> Anime (Dub)</a>
-                <a href="javascript:void(0)" onclick="showAzList('K-Drama')"><i class="fas fa-angle-right"></i> K-Dramas</a>
-                <a href="javascript:void(0)" onclick="showAzList('Movie')"><i class="fas fa-angle-right"></i> Movies</a>
-                <a href="javascript:void(0)" onclick="showAzList('Series')"><i class="fas fa-angle-right"></i> Web Series</a>
-            </div>
-        </div>
+  <div class="header">
+    <span class="logo" onclick="showHome()">AnimeStudio</span>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search by name or genre..." oninput="searchPosts()">
+      <i class="fa-solid fa-magnifying-glass"></i>
     </div>
-    <div id="overlay" onclick="closeNav()"></div>
-
-    <!-- HEADER -->
-    <header>
-        <div class="header-left">
-            <span class="menu-icon" onclick="openNav()"><i class="fas fa-bars"></i></span>
-            <a href="index.html" class="logo">ASI <span>Studio</span></a>
-        </div>
-        <div class="search-box">
-            <i class="fas fa-search"></i>
-            <input id="searchInput" placeholder="Search Anime, K-Drama, Movies...">
-        </div>
-    </header>
-
-    <!-- NEW CATEGORY FILTERS -->
-    <div class="filter-container" id="mainFilters">
-        <button onclick="setType('all', this)" class="active">All</button>
-        <button onclick="setType('anime sub', this)">Anime (Sub)</button>
-        <button onclick="setType('anime dub', this)">Anime (Dub)</button>
-        <button onclick="setType('k-drama', this)">K-Dramas</button>
-        <button onclick="setType('movie', this)">Movies</button>
-        <button onclick="setType('series', this)">Web Series</button>
+    <div class="header-right">
+      <span class="menu-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></span>
     </div>
+  </div>
 
-    <!-- MAIN GRID -->
-    <main id="animeList" class="anime-list">
-        <div class="loader-container">
-            <div class="loader"></div>
-            <h3 style="color:var(--primary);">Loading Content...</h3>
-        </div>
-    </main>
+  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <h3>Filters Menu</h3>
+    <a href="#" onclick="showAllPosts()"><i class="fa-solid fa-house"></i> All Anime</a>
+    <a href="#" onclick="showSidebarSection('category')"><i class="fa-solid fa-layer-group"></i> Categories</a>
+    <a href="#" onclick="showSidebarSection('genre')"><i class="fa-solid fa-masks-theater"></i> Genres</a>
+    <a href="#" onclick="showSidebarSection('az')"><i class="fa-solid fa-arrow-down-a-z"></i> A2Z List</a>
+    <a href="#" onclick="openPaidRequestPrompt()"><i class="fa-solid fa-key" style="color:#ffd700;"></i> Paid Unlock</a>
+    <a href="#" id="tgChannel" target="_blank"><i class="fa-brands fa-telegram"></i> Telegram Channel</a>
+    <a href="#" id="tgGroup" target="_blank"><i class="fa-brands fa-telegram"></i> Telegram Group</a>
+  </div>
 
-    <!-- A-Z LIST VIEW SECTION -->
-    <div id="azListView" class="az-list-view" style="display: none;">
-        <button class="back-to-home-btn" onclick="showHome()"><i class="fas fa-home"></i> Back to Home</button>
-        <h2 id="azListTitle" style="color: var(--primary); text-transform: uppercase;"></h2>
-        <div id="az-alphabet-box" class="az-alphabet-box"></div>
-        <div id="az-results" class="az-results">
-            <p style="color:#aaa; text-align:center;">Select an alphabet to see the list.</p>
-        </div>
+  <div id="mainContent">
+    <h2 class="section-title" id="gridTitle">All <span>Anime Series</span></h2>
+    <div id="postsGrid" class="posts-grid"></div>
+    
+    <div id="detailPage" class="detail-page">
+      <button class="back-btn" onclick="showHome()"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <div id="detailContent"></div>
     </div>
+  </div>
 
-    <!-- FOOTER WITH PREMIUM BUTTON -->
-    <div class="social-footer">
-        <a href="https://t.me/hindisubinganime" target="_blank" class="btn-tg"><i class="fab fa-telegram"></i> Free Channel</a>
-        <a href="https://t.me/hindisubanime_q" target="_blank" class="btn-gc"><i class="fas fa-comments"></i> Group</a>
-        <a href="https://t.me/YOUR_PAID_GROUP_LINK" target="_blank" class="btn-paid"><i class="fas fa-gem"></i> Premium Content</a>
-    </div>
+  <div class="seo-tag-cloud">
+    <strong>Popular Tags:</strong> Hindi sub anime, Hindi sub series, Hindi sub donghua, Hindi sub doungwa, K drama Hindi sub, Hindi dub movies, Hindi dub series, Hindi dub anime, Hindi sub manga, Korean drama hindi subbed, Chinese anime hindi subbed, watch anime in hindi, download anime hindi subbed, free manga hindi translation, watch donghua online, anime hindi dubbing.
+  </div>
 
-    <!-- Appwrite SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.1"></script>
-    <script>
-        const client = new Appwrite.Client()
-            .setEndpoint('https://cloud.appwrite.io/v1')
-            .setProject('6a562e7f0030aa778863');
+  <div class="modal" id="modal">
+    <div class="modal-box" id="modalContent"></div>
+  </div>
 
-        const databases = new Appwrite.Databases(client);
-        const DB_ID = '6a562f8a001c9d95454a';
+  <!-- Appwrite SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.1"></script>
+  <script>
+    const client = new Appwrite.Client()
+      .setEndpoint('https://cloud.appwrite.io/v1')
+      .setProject('6a562e7f0030aa778863');
 
-        let allAnime = [];
-        let currentType = "all";
-        let currentSearch = "";
+    const databases = new Appwrite.Databases(client);
+    const DB_ID = '6a562f8a001c9d95454a';
 
-        // Sidebar logic
-        window.openNav = () => {
-            document.getElementById("sidebar").style.width = "280px";
-            document.getElementById("overlay").style.display = "block";
-        }
-        window.closeNav = () => {
-            document.getElementById("sidebar").style.width = "0";
-            document.getElementById("overlay").style.display = "none";
-        }
-        window.showHome = () => {
-            document.getElementById("animeList").style.display = "grid";
-            document.getElementById("mainFilters").style.display = "flex";
-            document.getElementById("azListView").style.display = "none";
-            applyFilter();
-        }
+    let allPosts = [];
+    let settings = {};
 
-        async function loadAnime() {
-            try {
-                const response = await databases.listDocuments(DB_ID, 'posts');
-                allAnime = response.documents.map(doc => ({
-                    id: doc.$id,
-                    name: doc.name,
-                    image_url: doc.image_url,
-                    genres: doc.genres,
-                    category: doc.category
-                }));
-                applyFilter();
-            } catch (e) {
-                document.getElementById("animeList").innerHTML = "<h3 style='color:red; width:100%; text-align:center;'>Error Loading Data ⚠️</h3>";
-            }
-        }
-        
-        function applyFilter() {
-            let filtered = allAnime.filter(a => {
-                const nameStr = (a.name || "").toLowerCase();
-                const typeStr = (a.category || "").toLowerCase();
-                const searchStr = currentSearch.toLowerCase();
+    document.addEventListener("DOMContentLoaded", loadApp);
 
-                const nameMatch = nameStr.includes(searchStr);
-                const typeMatch = currentType === "all" || typeStr === currentType;
-                
-                return nameMatch && typeMatch;
-            });
-            render(filtered);
-        }
+    async function loadApp() {
+      try {
+        // Fetch posts
+        const postRes = await databases.listDocuments(DB_ID, 'posts');
+        allPosts = postRes.documents.map(doc => ({
+          id: doc.$id,
+          name: doc.name,
+          image_url: doc.image_url,
+          release_date: doc.release_date,
+          genres: doc.genres,
+          season: doc.season,
+          short_story: doc.short_story,
+          category: doc.category
+        }));
 
-        function render(list) {
-            let box = document.getElementById("animeList");
-            box.innerHTML = ""; 
-
-            if (list.length === 0) {
-                box.innerHTML = "<h3 style='width:100%; text-align:center; color:#aaa; margin-top:40px;'>No Content Found 😢</h3>";
-                return;
-            }
-
-            list.forEach(a => {
-                let card = document.createElement("div");
-                card.className = "anime-card";
-                
-                let typeText = (a.category || "Anime Sub").toUpperCase();
-                let badgeClass = "badge-sub";
-                if(typeText.includes("DUB")) badgeClass = "badge-dub";
-                else if(typeText.includes("K-DRAMA")) badgeClass = "badge-kdrama";
-                else if(typeText.includes("MOVIE")) badgeClass = "badge-movie";
-
-                card.innerHTML = `
-                    <div class="badge-type ${badgeClass}">${typeText}</div>
-                    <img src="${a.image_url || 'https://via.placeholder.com/280x400'}" loading="lazy" alt="${a.name}">
-                    <div class="anime-info">
-                        <h4>${a.name}</h4>
-                        <span class="genre-tag">${a.genres || "General"}</span>
-                    </div>
-                `;
-                card.onclick = () => location.href = "detail.html?id=" + a.id;
-                box.appendChild(card);
-            });
-        }
-
-        document.getElementById("searchInput").addEventListener("input", e => {
-            currentSearch = e.target.value.trim();
-            applyFilter(); 
+        // Fetch settings
+        const settingsRes = await databases.listDocuments(DB_ID, 'settings');
+        settingsRes.documents.forEach(doc => {
+          settings[doc.key] = doc.value;
         });
-
-        // A-Z Directory Logic
-        window.showAzList = (type) => {
-            closeNav(); 
-            document.getElementById("animeList").style.display = "none";
-            document.getElementById("mainFilters").style.display = "none"; 
-            document.getElementById("azListView").style.display = "block"; 
-            
-            document.getElementById("azListTitle").innerHTML = `<i class="fas fa-list"></i> ${type} Directory`;
-            
-            const alphabetBox = document.getElementById("az-alphabet-box");
-            alphabetBox.innerHTML = ''; 
-            
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(letter => {
-                let btn = document.createElement('button');
-                btn.textContent = letter;
-                btn.onclick = function() { renderAzResults(type, letter, this); };
-                alphabetBox.appendChild(btn);
-            });
-            
-            document.getElementById("az-results").innerHTML = "<p style='color:#aaa; text-align:center;'>Select an alphabet to see the list.</p>";
-        };
         
-        window.renderAzResults = (type, letter, clickedBtn) => {
-             document.querySelectorAll('#az-alphabet-box button').forEach(b => b.classList.remove('active'));
-             if(clickedBtn) clickedBtn.classList.add('active');
+        document.getElementById("tgChannel").href = settings.channel_link || "#";
+        document.getElementById("tgGroup").href = settings.group_link || "#";
+        renderPosts(allPosts);
+      } catch(e) {
+        console.error("Database connection failed", e);
+      }
+    }
 
-            const resultsBox = document.getElementById("az-results");
-            resultsBox.innerHTML = ''; 
-            
-            const filtered = allAnime
-                .filter(a => (a.category || "").toLowerCase() === type.toLowerCase() && (a.name || "").toUpperCase().startsWith(letter))
-                .sort((a,b) => (a.name || "").localeCompare(b.name || "")); 
-            
-            if(filtered.length === 0) {
-                resultsBox.innerHTML = '<p style="color:#aaa; text-align:center;">No content found starting with this letter.</p>';
-                return;
-            }
-            
-            filtered.forEach(a => {
-                let p = document.createElement('a');
-                p.className = 'az-result-item';
-                p.innerHTML = `<i class="fas fa-play-circle" style="color:var(--primary); margin-right:10px;"></i> ${a.name}`;
-                p.href = `detail.html?id=${a.id}`;
-                resultsBox.appendChild(p);
-            });
-        };
+    function renderPosts(posts) {
+      const grid = document.getElementById("postsGrid");
+      if (posts.length === 0) {
+        grid.innerHTML = "<div style='grid-column:1/-1; text-align:center; padding:50px;'>No anime found.</div>";
+        return;
+      }
+      
+      grid.innerHTML = posts.map(p => {
+        const mediaSection = (p.image_url && p.image_url.trim().startsWith("http")) 
+          ? `<img src="${p.image_url}" alt="${p.name}">` 
+          : `<div class="fallback-box">
+               <div class="cat">${p.category}</div>
+               <div class="name-style">${p.name}</div>
+             </div>`;
+             
+        return `
+          <div class="post-card" onclick="showDetail('${p.id}')">
+            ${mediaSection}
+            <span class="category-tag">${p.category}</span>
+            <div class="title-text">${p.name}</div>
+          </div>
+        `;
+      }).join("");
+    }
 
-        // Start App
-        loadAnime();
-    </script>
+    async function showDetail(postId) {
+      const post = allPosts.find(p => p.id === postId);
+      if (!post) return;
+      
+      document.getElementById("postsGrid").style.display = "none";
+      document.getElementById("gridTitle").style.display = "none";
+      document.getElementById("detailPage").classList.add("active");
+      
+      const mediaSection = (post.image_url && post.image_url.trim().startsWith("http")) 
+          ? `<img src="${post.image_url}" alt="${post.name}">` 
+          : `<div class="fallback-box" style="width:260px; border-radius:12px;">
+               <div class="cat">${post.category}</div>
+               <div class="name-style">${post.name}</div>
+             </div>`;
+
+      document.getElementById("detailContent").innerHTML = `
+        <div class="detail-header">
+          ${mediaSection}
+          <div class="detail-info">
+            <h2>${post.name}</h2>
+            <p><strong>Category:</strong> ${post.category}</p>
+            <p><strong>Genre:</strong> ${post.genres || "N/A"}</p>
+            <p><strong>Release:</strong> ${post.release_date || "N/A"}</p>
+            <p><strong>Season:</strong> ${post.season || "N/A"}</p>
+            <p><strong>Story:</strong> ${post.short_story || "N/A"}</p>
+          </div>
+        </div>
+        <div class="episodes" id="episodesBlock">
+          <h3>Episodes List</h3>
+          <div style="padding: 20px 0; text-align: center; color: #777;">
+            <i class="fa-solid fa-spinner fa-spin" style="margin-right:8px;"></i> Loading episodes...
+          </div>
+        </div>
+      `;
+
+      try {
+        const epRes = await databases.listDocuments(DB_ID, 'episodes', [
+          Appwrite.Query.equal('post_id', postId)
+        ]);
+        const episodes = epRes.documents;
+        
+        const epGridBlock = document.getElementById("episodesBlock");
+        if (epGridBlock) {
+          if (!episodes || episodes.length === 0) {
+            epGridBlock.innerHTML = `<h3>Episodes List</h3><div style="padding: 10px 0; color:#777;">No episodes published yet.</div>`;
+          } else {
+            epGridBlock.innerHTML = `
+              <h3>Episodes List</h3>
+              <div class="episodes-grid">
+                ${episodes.map(ep => {
+                  const labelDisplay = ep.quality ? `${ep.episode_label} [${ep.quality}]` : ep.episode_label;
+                  const hasOriginal = ep.original_link && ep.original_link.trim() !== "";
+                  const hasPlay = ep.play_link && ep.play_link.trim() !== "";
+                  return `
+                    <button onclick="handleEpisode('${ep.$id}', '${post.name.replace(/'/g, "\\'")}', '${ep.episode_label.replace(/'/g, "\\'")}', ${hasOriginal}, ${hasPlay})">${labelDisplay}</button>
+                  `;
+                }).join("")}
+              </div>
+            `;
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching episodes", err);
+      }
+    }
+
+    function handleEpisode(epId, postName, epLabel, hasOriginal, hasPlay) {
+      let modalHTML = `
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <h3>${postName}</h3>
+        <p>${epLabel}</p>
+      `;
+      
+      if (hasOriginal) {
+        modalHTML += `<button onclick="solveShortener('${epId}')"><i class="fa-solid fa-download"></i> Solve Shortener & Download</button>`;
+      }
+      if (hasPlay) {
+        modalHTML += `<button onclick="openStreamingPrompt('${epId}')" style="background:#0088cc;"><i class="fa-solid fa-play"></i> Private Stream</button>`;
+      }
+      if (hasOriginal) {
+        modalHTML += `<button onclick="openPremiumPrompt('${epId}')" style="background:#00b359;"><i class="fa-solid fa-gem"></i> Premium Login Direct Route</button>`;
+      }
+      
+      showModal(modalHTML);
+    }
+
+    async function solveShortener(epId) {
+      showModal(`<h3>Shortening Link...</h3><p>Connecting with server routing, please wait...</p>`);
+      try {
+        const ep = await databases.getDocument(DB_ID, 'episodes', epId);
+        const originalLink = ep.original_link;
+
+        if (!originalLink) {
+          alert("Error: Original Link Missing!");
+          closeModal();
+          return;
+        }
+
+        const shRes = await databases.listDocuments(DB_ID, 'shorteners');
+        const shorteners = shRes.documents;
+
+        if (shorteners.length === 0) {
+          window.open(originalLink, "_blank");
+          closeModal();
+          return;
+        }
+
+        const sh = shorteners[Math.floor(Math.random() * shorteners.length)];
+        
+        let cleanUrl = sh.dashboard_url.trim()
+          .replace(/^(https?:\/\/)?(www\.)?/, "")
+          .replace(/\/+$/, "");
+
+        const dailyId = Math.floor(Date.now() / 86400000);
+        const uniqueLink = originalLink + (originalLink.includes('?') ? '&' : '?') + "asi_uid=" + dailyId;
+        
+        const apiUrl = `https://${cleanUrl}/api?api=${sh.api_key}&url=${encodeURIComponent(uniqueLink)}`;
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+
+        const res = await fetch(proxyUrl);
+        const textData = await res.text();
+        
+        let finalLink = null;
+        try {
+          const json = JSON.parse(textData);
+          finalLink = json.shortenedUrl || json.shortened_url;
+        } catch(e) {
+          if (textData && (textData.trim().startsWith("http://") || textData.trim().startsWith("https://"))) {
+            finalLink = textData.trim();
+          }
+        }
+
+        if (finalLink && finalLink.startsWith('http')) {
+          const form = document.createElement('form');
+          form.method = "GET";
+          form.action = finalLink;
+          form.target = "_blank";
+          document.body.appendChild(form);
+          form.submit();
+          document.body.removeChild(form);
+        } else {
+          window.open(originalLink, "_blank");
+        }
+        closeModal();
+      } catch (e) {
+        alert("Bypass routing configuration error.");
+        closeModal();
+      }
+    }
+
+    function openStreamingPrompt(epId) {
+      showModal(`
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <h3>Enter Player Password</h3>
+        <input type="text" id="playPassInput" placeholder="Enter global video key">
+        <button onclick="verifyPlayer('${epId}')">Authenticate & Play</button>
+      `);
+    }
+
+    async function verifyPlayer(epId) {
+      const pass = document.getElementById("playPassInput").value.trim();
+      const actualPass = settings.player_password || "stream123";
+
+      if(pass === actualPass) {
+        const ep = await databases.getDocument(DB_ID, 'episodes', epId);
+        window.open(ep.play_link, "_blank");
+        closeModal();
+      } else {
+        alert("Wrong Player Password!");
+      }
+    }
+
+    function openPremiumPrompt(epId) {
+      showModal(`
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <h3>Premium Login</h3>
+        <p>No advertisements, direct original download link</p>
+        <input type="email" id="premGmail" placeholder="Enter Gmail ID">
+        <input type="password" id="premPass" placeholder="Enter Password">
+        <button onclick="loginPremium('${epId}')">Login & Bypass</button>
+      `);
+    }
+
+    async function loginPremium(epId) {
+      const gmail = document.getElementById("premGmail").value.trim().toLowerCase();
+      const pass = document.getElementById("premPass").value.trim();
+      
+      try {
+        const res = await databases.listDocuments(DB_ID, 'premiumusers', [
+          Appwrite.Query.equal('gmail', gmail),
+          Appwrite.Query.equal('password', pass)
+        ]);
+
+        if (res.documents.length > 0) {
+          const user = res.documents[0];
+          const now = new Date();
+          const expiry = new Date(user.expires_at);
+
+          if (expiry > now) {
+            const ep = await databases.getDocument(DB_ID, 'episodes', epId);
+            window.open(ep.original_link, "_blank");
+            closeModal();
+          } else {
+            alert("Your premium access has expired.");
+          }
+        } else {
+          alert("Invalid Gmail or Password.");
+        }
+      } catch(err) {
+        alert("Bypass route failed.");
+      }
+    }
+
+    function openPaidRequestPrompt() {
+      toggleSidebar();
+      showModal(`
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <h3>Paid Request Unlock</h3>
+        <p>Enter the private code key provided by administrator</p>
+        <input type="text" id="paidKeyInput" placeholder="Enter key code">
+        <button onclick="unlockPaidRequest()">Unlock File</button>
+      `);
+    }
+
+    async function unlockPaidRequest() {
+      const pass = document.getElementById("paidKeyInput").value.trim();
+      try {
+        const res = await databases.listDocuments(DB_ID, 'paidrequests', [
+          Appwrite.Query.equal('password', pass)
+        ]);
+
+        if (res.documents.length > 0) {
+          window.open(res.documents[0].original_link, "_blank");
+          closeModal();
+        } else {
+          alert("Invalid access key!");
+        }
+      } catch(e) {
+        alert("Verification failed.");
+      }
+    }
+
+    function showHome() {
+      document.getElementById("postsGrid").style.display = "grid";
+      document.getElementById("gridTitle").style.display = "block";
+      document.getElementById("detailPage").classList.remove("active");
+      renderPosts(allPosts);
+    }
+
+    function searchPosts() {
+      const term = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = allPosts.filter(p => p.name.toLowerCase().includes(term) || (p.genres && p.genres.toLowerCase().includes(term)));
+      renderPosts(filtered);
+    }
+
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("open");
+      document.getElementById("overlay").classList.toggle("show");
+    }
+
+    function showSidebarSection(type) {
+      toggleSidebar();
+      if (type === "category") {
+        const categories = [...new Set(allPosts.map(p => p.category).filter(Boolean))];
+        showModal(`
+          <span class="close-modal" onclick="closeModal()">&times;</span>
+          <h3>Categories</h3>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
+            ${categories.map(cat => `<button onclick="filterByCat('${cat}')">${cat}</button>`).join("")}
+          </div>
+        `);
+      } else if (type === "genre") {
+        const genresSet = new Set();
+        allPosts.forEach(p => {
+          if (p.genres) {
+            const splitGenres = p.genres.split(/[\s,;]+/).filter(Boolean);
+            splitGenres.forEach(g => genresSet.add(g.trim()));
+          }
+        });
+        const genres = [...genresSet];
+        showModal(`
+          <span class="close-modal" onclick="closeModal()">&times;</span>
+          <h3>Genres</h3>
+          <div style="display:flex; flex-direction:column; gap:10px; max-height:250px; overflow-y:auto; margin-top:20px;">
+            ${genres.map(g => `<button onclick="filterByGenre('${g}')">${g}</button>`).join("")}
+          </div>
+        `);
+      } else if (type === "az") {
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ#".split("");
+        showModal(`
+          <span class="close-modal" onclick="closeModal()">&times;</span>
+          <h3>A2Z Filter</h3>
+          <div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:10px; margin-top:20px;">
+            ${letters.map(l => `<button onclick="filterByLetter('${l}')">${l}</button>`).join("")}
+          </div>
+        `);
+      }
+    }
+
+    function filterByCat(cat) {
+      closeModal();
+      document.getElementById("gridTitle").innerHTML = `Category: <span>${cat}</span>`;
+      renderPosts(allPosts.filter(p => p.category === cat));
+    }
+
+    function filterByGenre(genre) {
+      closeModal();
+      document.getElementById("gridTitle").innerHTML = `Genre: <span>${genre}</span>`;
+      renderPosts(allPosts.filter(p => p.genres && p.genres.toLowerCase().includes(genre.toLowerCase())));
+    }
+
+    function filterByLetter(l) {
+      closeModal();
+      document.getElementById("gridTitle").innerHTML = `Starting with: <span>${l}</span>`;
+      if (l === "#") {
+        renderPosts(allPosts.filter(p => /^[0-9]/.test(p.name)));
+      } else {
+        renderPosts(allPosts.filter(p => p.name.toUpperCase().startsWith(l)));
+      }
+    }
+
+    function showAllPosts() {
+      toggleSidebar();
+      showHome();
+    }
+
+    function showModal(html) {
+      const modal = document.getElementById("modal");
+      document.getElementById("modalContent").innerHTML = html;
+      modal.classList.add("active");
+    }
+
+    function closeModal() {
+      document.getElementById("modal").classList.remove("active");
+    }
+  </script>
 </body>
-              </html>
+</html>
