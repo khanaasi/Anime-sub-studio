@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- MASTER SEO METATAGS -->
+    <title>ASI Anime - Watch Hindi Subbed & Dubbed Anime, K-Drama, Movies</title>
+    <meta name="description" content="Watch your favorite Anime, K-Dramas, Web Series, and Movies in Hindi Sub & Dub for free on ASI Anime Sub Studio.">
+    <meta name="keywords" content="Anime hindi sub, Hindi sub anime, Hindi subbed anime, Anime hindi subbed, K drama Hindi sub, Asi anime, Anime sub studio, download anime in hindi, watch anime online hindi dub, movies hindi sub">
+    <meta name="robots" content="index, follow">
+    <meta name="google-site-verification" content="ND0KTgqSSZEiva4iEnrwKjwKebvFX4s0ugNm4XrRaCA" />
+    
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- A-Z DIRECTORY SIDEBAR (Upgraded UI) -->
+    <div id="sidebar" class="sidebar">
+        <a href="javascript:void(0)" class="close-btn" onclick="closeNav()">&times;</a>
+        <div class="sidebar-content">
+            <h3 style="color: var(--primary); border-bottom: 1px solid #333; padding-bottom: 10px;"><i class="fas fa-book"></i> A-Z Directory</h3>
+            <div id="all-anime-list-menu">
+                <a href="javascript:void(0)" onclick="showAzList('Anime Sub')"><i class="fas fa-angle-right"></i> Anime (Sub)</a>
+                <a href="javascript:void(0)" onclick="showAzList('Anime Dub')"><i class="fas fa-angle-right"></i> Anime (Dub)</a>
+                <a href="javascript:void(0)" onclick="showAzList('K-Drama')"><i class="fas fa-angle-right"></i> K-Dramas</a>
+                <a href="javascript:void(0)" onclick="showAzList('Movie')"><i class="fas fa-angle-right"></i> Movies</a>
+                <a href="javascript:void(0)" onclick="showAzList('Series')"><i class="fas fa-angle-right"></i> Web Series</a>
+            </div>
+        </div>
+    </div>
+    <div id="overlay" onclick="closeNav()"></div>
+
+    <!-- HEADER -->
+    <header>
+        <div class="header-left">
+            <span class="menu-icon" onclick="openNav()"><i class="fas fa-bars"></i></span>
+            <a href="index.html" class="logo">ASI <span>Studio</span></a>
+        </div>
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input id="searchInput" placeholder="Search Anime, K-Drama, Movies...">
+        </div>
+    </header>
+
+    <!-- NEW CATEGORY FILTERS -->
+    <div class="filter-container" id="mainFilters">
+        <button onclick="setType('all', this)" class="active">All</button>
+        <button onclick="setType('anime sub', this)">Anime (Sub)</button>
+        <button onclick="setType('anime dub', this)">Anime (Dub)</button>
+        <button onclick="setType('k-drama', this)">K-Dramas</button>
+        <button onclick="setType('movie', this)">Movies</button>
+        <button onclick="setType('series', this)">Web Series</button>
+    </div>
+
+    <!-- MAIN GRID -->
+    <main id="animeList" class="anime-list">
+        <div class="loader-container">
+            <div class="loader"></div>
+            <h3 style="color:var(--primary);">Loading Content...</h3>
+        </div>
+    </main>
+
+    <!-- A-Z LIST VIEW SECTION -->
+    <div id="azListView" class="az-list-view" style="display: none;">
+        <button class="back-to-home-btn" onclick="showHome()"><i class="fas fa-home"></i> Back to Home</button>
+        <h2 id="azListTitle" style="color: var(--primary); text-transform: uppercase;"></h2>
+        <div id="az-alphabet-box" class="az-alphabet-box"></div>
+        <div id="az-results" class="az-results">
+            <p style="color:#aaa; text-align:center;">Select an alphabet to see the list.</p>
+        </div>
+    </div>
+
+    <!-- FOOTER WITH PREMIUM BUTTON -->
+    <div class="social-footer">
+        <a href="https://t.me/hindisubinganime" target="_blank" class="btn-tg"><i class="fab fa-telegram"></i> Free Channel</a>
+        <a href="https://t.me/hindisubanime_q" target="_blank" class="btn-gc"><i class="fas fa-comments"></i> Group</a>
+        <a href="https://t.me/YOUR_PAID_GROUP_LINK" target="_blank" class="btn-paid"><i class="fas fa-gem"></i> Premium Content</a>
+    </div>
+
+    <!-- Appwrite SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.1"></script>
+    <script>
+        const client = new Appwrite.Client()
+            .setEndpoint('https://cloud.appwrite.io/v1')
+            .setProject('6a562e7f0030aa778863');
+
+        const databases = new Appwrite.Databases(client);
+        const DB_ID = '6a562f8a001c9d95454a';
+
+        let allAnime = [];
+        let currentType = "all";
+        let currentSearch = "";
+
+        // Sidebar logic
+        window.openNav = () => {
+            document.getElementById("sidebar").style.width = "280px";
+            document.getElementById("overlay").style.display = "block";
+        }
+        window.closeNav = () => {
+            document.getElementById("sidebar").style.width = "0";
+            document.getElementById("overlay").style.display = "none";
+        }
+        window.showHome = () => {
+            document.getElementById("animeList").style.display = "grid";
+            document.getElementById("mainFilters").style.display = "flex";
+            document.getElementById("azListView").style.display = "none";
+            applyFilter();
+        }
+
+        async function loadAnime() {
+            try {
+                const response = await databases.listDocuments(DB_ID, 'posts');
+                allAnime = response.documents.map(doc => ({
+                    id: doc.$id,
+                    name: doc.name,
+                    image_url: doc.image_url,
+                    genres: doc.genres,
+                    category: doc.category
+                }));
+                applyFilter();
+            } catch (e) {
+                document.getElementById("animeList").innerHTML = "<h3 style='color:red; width:100%; text-align:center;'>Error Loading Data ⚠️</h3>";
+            }
+        }
+        
+        function applyFilter() {
+            let filtered = allAnime.filter(a => {
+                const nameStr = (a.name || "").toLowerCase();
+                const typeStr = (a.category || "").toLowerCase();
+                const searchStr = currentSearch.toLowerCase();
+
+                const nameMatch = nameStr.includes(searchStr);
+                const typeMatch = currentType === "all" || typeStr === currentType;
+                
+                return nameMatch && typeMatch;
+            });
+            render(filtered);
+        }
+
+        function render(list) {
+            let box = document.getElementById("animeList");
+            box.innerHTML = ""; 
+
+            if (list.length === 0) {
+                box.innerHTML = "<h3 style='width:100%; text-align:center; color:#aaa; margin-top:40px;'>No Content Found 😢</h3>";
+                return;
+            }
+
+            list.forEach(a => {
+                let card = document.createElement("div");
+                card.className = "anime-card";
+                
+                let typeText = (a.category || "Anime Sub").toUpperCase();
+                let badgeClass = "badge-sub";
+                if(typeText.includes("DUB")) badgeClass = "badge-dub";
+                else if(typeText.includes("K-DRAMA")) badgeClass = "badge-kdrama";
+                else if(typeText.includes("MOVIE")) badgeClass = "badge-movie";
+
+                card.innerHTML = `
+                    <div class="badge-type ${badgeClass}">${typeText}</div>
+                    <img src="${a.image_url || 'https://via.placeholder.com/280x400'}" loading="lazy" alt="${a.name}">
+                    <div class="anime-info">
+                        <h4>${a.name}</h4>
+                        <span class="genre-tag">${a.genres || "General"}</span>
+                    </div>
+                `;
+                card.onclick = () => location.href = "detail.html?id=" + a.id;
+                box.appendChild(card);
+            });
+        }
+
+        document.getElementById("searchInput").addEventListener("input", e => {
+            currentSearch = e.target.value.trim();
+            applyFilter(); 
+        });
+
+        // A-Z Directory Logic
+        window.showAzList = (type) => {
+            closeNav(); 
+            document.getElementById("animeList").style.display = "none";
+            document.getElementById("mainFilters").style.display = "none"; 
+            document.getElementById("azListView").style.display = "block"; 
+            
+            document.getElementById("azListTitle").innerHTML = `<i class="fas fa-list"></i> ${type} Directory`;
+            
+            const alphabetBox = document.getElementById("az-alphabet-box");
+            alphabetBox.innerHTML = ''; 
+            
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(letter => {
+                let btn = document.createElement('button');
+                btn.textContent = letter;
+                btn.onclick = function() { renderAzResults(type, letter, this); };
+                alphabetBox.appendChild(btn);
+            });
+            
+            document.getElementById("az-results").innerHTML = "<p style='color:#aaa; text-align:center;'>Select an alphabet to see the list.</p>";
+        };
+        
+        window.renderAzResults = (type, letter, clickedBtn) => {
+             document.querySelectorAll('#az-alphabet-box button').forEach(b => b.classList.remove('active'));
+             if(clickedBtn) clickedBtn.classList.add('active');
+
+            const resultsBox = document.getElementById("az-results");
+            resultsBox.innerHTML = ''; 
+            
+            const filtered = allAnime
+                .filter(a => (a.category || "").toLowerCase() === type.toLowerCase() && (a.name || "").toUpperCase().startsWith(letter))
+                .sort((a,b) => (a.name || "").localeCompare(b.name || "")); 
+            
+            if(filtered.length === 0) {
+                resultsBox.innerHTML = '<p style="color:#aaa; text-align:center;">No content found starting with this letter.</p>';
+                return;
+            }
+            
+            filtered.forEach(a => {
+                let p = document.createElement('a');
+                p.className = 'az-result-item';
+                p.innerHTML = `<i class="fas fa-play-circle" style="color:var(--primary); margin-right:10px;"></i> ${a.name}`;
+                p.href = `detail.html?id=${a.id}`;
+                resultsBox.appendChild(p);
+            });
+        };
+
+        // Start App
+        loadAnime();
+    </script>
+</body>
+              </html>
