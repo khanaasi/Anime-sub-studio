@@ -195,10 +195,11 @@
   <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.1"></script>
   <script>
     const client = new Appwrite.Client()
-      .setEndpoint('https://cloud.appwrite.io/v1')
+      .setEndpoint('https://fra.cloud.appwrite.io/v1')
       .setProject('6a562e7f0030aa778863');
 
     const databases = new Appwrite.Databases(client);
+    const account = new Appwrite.Account(client);
     const DB_ID = '6a562f8a001c9d95454a';
 
     let allPosts = [];
@@ -207,6 +208,17 @@
     document.addEventListener("DOMContentLoaded", loadApp);
 
     async function loadApp() {
+      // Setup guest session to allow secure reading of collections
+      try {
+        await account.get();
+      } catch (e) {
+        try {
+          await account.createAnonymousSession();
+        } catch (err) {
+          console.warn("Guest session failed or bypassed");
+        }
+      }
+
       try {
         // Fetch posts
         const postRes = await databases.listDocuments(DB_ID, 'posts');
@@ -231,7 +243,7 @@
         document.getElementById("tgGroup").href = settings.group_link || "#";
         renderPosts(allPosts);
       } catch(e) {
-        console.error("Database connection failed", e);
+        console.error("Database initialization failed", e);
       }
     }
 
@@ -353,7 +365,7 @@
         const originalLink = ep.original_link;
 
         if (!originalLink) {
-          alert("Error: Original Link Missing!");
+          alert("Error: Link missing.");
           closeModal();
           return;
         }
