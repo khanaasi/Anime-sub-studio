@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Watch Online | ASI Anime</title>
+    <meta name="description" content="View detailed information and episodes. Watch high quality Anime, K-Dramas, and Movies in Hindi Sub & Dub.">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .detail-container { max-width: 1200px; margin: 30px auto; padding: 25px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 20px; display: flex; gap: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .detail-img { width: 280px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); object-fit: cover; }
+        .detail-info { flex: 1; }
+        .detail-info h1 { color: #ff6b35; font-size: 2.2rem; margin-bottom: 10px; }
+        .detail-season { color: #ffd700; margin-bottom: 15px; }
+        .badge { display: inline-block; background: #2c2c3e; padding: 5px 12px; border-radius: 20px; font-size: 12px; margin-right: 10px; color: #e0e0e0; margin-bottom: 5px;}
+        .detail-desc { line-height: 1.7; color: #b0b0c0; margin: 20px 0; font-size: 1rem; }
+        .episodes-box { margin-top: 30px; }
+        .episodes-box h3 { color: #ff6b35; margin-bottom: 20px; }
+        .episodes-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+        .ep-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s ease; font-size: 14px; text-decoration: none; display: inline-block;}
+        .ep-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); color: white;}
+        .ep-btn.loading { opacity: 0.6; pointer-events: none; }
+        .loader-container { text-align: center; padding: 50px; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #ff6b35; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .back-btn { display: inline-block; margin: 20px; padding: 10px 20px; background: #ff6b35; color: white; text-decoration: none; border-radius: 8px; transition: 0.3s; }
+        .back-btn:hover { background: #ff5230; transform: translateX(-5px); }
+        .social-footer { text-align: center; margin: 40px 0 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        .btn-tg, .btn-gc, .btn-paid { padding: 12px 25px; border-radius: 30px; text-decoration: none; color: white; font-weight: bold; transition: 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-tg { background: #0088cc; } .btn-gc { background: #25d366; } .btn-paid { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #000; }
+        .btn-tg:hover, .btn-gc:hover, .btn-paid:hover { transform: translateY(-3px); }
+        @media (max-width: 768px) { .detail-container { flex-direction: column; align-items: center; text-align: center; } .detail-img { width: 220px; } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="logo">ASI <span>Studio</span></a>
+    </header>
+
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Home</a>
+
+    <div id="detailBox">
+        <div class="loader-container">
+            <div class="loader"></div>
+            <h2>Loading Data...</h2>
+        </div>
+    </div>
+
+    <div class="social-footer">
+        <a href="https://t.me/hindisubinganime" target="_blank" class="btn-tg"><i class="fab fa-telegram"></i> Free Channel</a>
+        <a href="https://t.me/hindisubanime_q" target="_blank" class="btn-gc"><i class="fas fa-comments"></i> Group</a>
+        <a href="https://t.me/YOUR_PAID_GROUP_LINK" target="_blank" class="btn-paid"><i class="fas fa-gem"></i> Premium Anime</a>
+    </div>
+
+    <!-- Appwrite SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.1"></script>
+    <script type="module">
+        const client = new Appwrite.Client()
+            .setEndpoint('https://cloud.appwrite.io/v1')
+            .setProject('6a562e7f0030aa778863');
+
+        const databases = new Appwrite.Databases(client);
+        const DB_ID = '6a562f8a001c9d95454a';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const animeId = urlParams.get('id');
+
+        let settings = {};
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, m => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[m]));
+        }
+
+        function makeUniqueUrl(original) {
+            const separator = original.includes('?') ? '&' : '?';
+            const dailyId = Math.floor(Date.now() / 86400000);
+            return original + separator + "asi_uid=" + dailyId;
+        }
+
+        // 🔥 NATURAL CLICK & REDIRECT ENGINE (CORS FIX)
+        window.processEpisodeClick = async function(btnElement) {
+            if(btnElement.classList.contains("loading")) return;
+            
+            const originalText = btnElement.innerHTML;
+            const targetLink = btnElement.getAttribute("data-link");
+            
+            btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+            btnElement.classList.add("loading");
+
+            try {
+                // Fetch Shorteners
+                const shRes = await databases.listDocuments(DB_ID, 'shorteners');
+                let apis = shRes.documents;
+
+                if (apis.length === 0) {
+                    // direct redirect if no shortener configured
+                    window.open(targetLink, "_blank");
+                    resetBtn(btnElement, originalText);
+                    return;
+                }
+
+                // Shuffled selection for traffic distribution
+                const randomShortener = apis[Math.floor(Math.random() * apis.length)];
+                
+                let cleanUrl = randomShortener.dashboard_url.trim()
+                    .replace(/^(https?:\/\/)?(www\.)?/, "")
+                    .replace(/\/+$/, "");
+
+                const bypassedUniqueLink = makeUniqueUrl(targetLink);
+                const apiUrl = `https://${cleanUrl}/api?api=${randomShortener.api_key}&url=${encodeURIComponent(bypassedUniqueLink)}`;
+                
+                // Bypass client restrictions using reliable CORS proxy
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+                const response = await fetch(proxyUrl);
+                const textData = await response.text();
+                
+                let finalShortLink = null;
+                try {
+                    const json = JSON.parse(textData);
+                    finalShortLink = json.shortenedUrl || json.shortened_url;
+                } catch(e) {
+                    if (textData && (textData.trim().startsWith("http://") || textData.trim().startsWith("https://"))) {
+                        finalShortLink = textData.trim();
+                    }
+                }
+
+                if (finalShortLink && finalShortLink.startsWith('http')) {
+                    const form = document.createElement('form');
+                    form.method = "GET";
+                    form.action = finalShortLink;
+                    form.target = "_blank";
+                    document.body.appendChild(form);
+                    form.submit();
+                    document.body.removeChild(form);
+                } else {
+                    throw new Error("Shortener failed");
+                }
+                
+            } catch (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Generation Failed', text: 'Service configuration error. Redirecting directly...', confirmButtonColor: '#ff6b35' });
+                window.open(targetLink, "_blank");
+            } finally {
+                resetBtn(btnElement, originalText);
+            }
+        };
+
+        function resetBtn(btn, text) {
+            btn.innerHTML = text;
+            btn.classList.remove("loading");
+        }
+
+        async function loadDetail() {
+            if (!animeId) {
+                document.getElementById("detailBox").innerHTML = "<h2 style='text-align:center;color:#ff6b35;'>❌ ID nahi mili!</h2>";
+                return;
+            }
+
+            try {
+                // Get details
+                const post = await databases.getDocument(DB_ID, 'posts', animeId);
+                
+                // Get episodes
+                const epRes = await databases.listDocuments(DB_ID, 'episodes', [
+                    Appwrite.Query.equal('post_id', animeId)
+                ]);
+                let episodes = epRes.documents;
+                episodes.sort((x, y) => parseFloat(x.episode_label) - parseFloat(y.episode_label));
+
+                // Fetch Settings
+                const setRes = await databases.listDocuments(DB_ID, 'settings');
+                setRes.documents.forEach(doc => {
+                    settings[doc.key] = doc.value;
+                });
+
+                const imgSrc = post.image_url || "https://via.placeholder.com/280x400?text=No+Image";
+                const typeText = (post.category || "ANIME").toUpperCase();
+                
+                let episodesHTML = "";
+                if (episodes.length === 0) {
+                    episodesHTML = `<p style="color:#a0a0b0; width:100%; text-align:center;">📭 Abhi koi episode upload nahi hua.</p>`;
+                } else {
+                    episodes.forEach((ep) => {
+                        episodesHTML += `<button class="ep-btn" data-link="${ep.original_link}"><i class="fas fa-play-circle"></i> Episode ${ep.episode_label}</button>`;
+                    });
+                }
+                
+                document.getElementById("detailBox").innerHTML = `
+                    <div class="detail-container">
+                        <img src="${imgSrc}" class="detail-img" alt="${post.name}">
+                        <div class="detail-info">
+                            <h1>${escapeHtml(post.name)}</h1>
+                            ${post.season ? `<h4 class="detail-season">📀 Season ${escapeHtml(post.season)}</h4>` : ''}
+                            <div style="margin: 10px 0 15px;">
+                                <span class="badge" style="background:#ff6b35; color:white;">${escapeHtml(typeText)}</span>
+                                <span class="badge"><i class="fas fa-tags"></i> ${escapeHtml(post.genres || "General")}</span>
+                                ${post.release_date ? `<span class="badge"><i class="far fa-calendar-alt"></i> ${escapeHtml(post.release_date)}</span>` : ''}
+                            </div>
+                            <p class="detail-desc">${escapeHtml(post.short_story || "Koi description uplabdh nahi hai.")}</p>
+                            <div class="episodes-box">
+                                <h3>📺 Episodes Dekhein / Download Karein</h3>
+                                <div class="episodes-grid">${episodesHTML}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error(error);
+                document.getElementById("detailBox").innerHTML = "<h2 style='text-align:center;color:#ff6b35;'>⚠️ Error loading details!</h2>";
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.ep-btn');
+            if (btn && btn.hasAttribute('data-link')) {
+                processEpisodeClick(btn);
+            }
+        });
+
+        loadDetail();
+    </script>
+</body>
+</html>
