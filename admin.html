@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Anime Admin Panel</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root { --bg: #09090b; --panel: #121214; --primary: #e50914; --primary-hover: #b8070e; --text: #ffffff; --border: #222226; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background: var(--bg); color: var(--text); }
+    
+    #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: flex; justify-content: center; align-items: center; z-index: 10000; }
+    .login-box { background: var(--panel); padding: 40px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; border: 1px solid var(--border); }
+    .login-box h2 { color: var(--primary); margin-bottom: 25px; font-weight: 800; }
+    .login-box input { width: 100%; padding: 14px; margin-bottom: 20px; background: #1c1c21; border: 1px solid var(--border); color: white; border-radius: 8px; text-align: center; font-size: 16px; }
+    .login-box button { background: var(--primary); color: white; width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+    .header { background: var(--panel); padding: 15px 25px; display: flex; align-items: center; border-bottom: 1px solid var(--border); }
+    .menu-toggle { font-size: 24px; cursor: pointer; margin-right: 20px; color: var(--primary); }
+    .site-name { font-size: 20px; font-weight: bold; }
+
+    .sidebar { position: fixed; left: -280px; top: 0; height: 100%; width: 280px; background: var(--panel); z-index: 999; transition: 0.3s; padding-top: 80px; border-right: 1px solid var(--border); }
+    .sidebar.open { left: 0; }
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 998; }
+    .sidebar-overlay.show { display: block; }
+    .menu-item { display: flex; align-items: center; padding: 15px 25px; color: var(--text); text-decoration: none; cursor: pointer; font-size: 15px; font-weight: 500; }
+    .menu-item i { margin-right: 15px; width: 20px; text-align: center; color: var(--primary); }
+    .menu-item:hover, .menu-item.active { background: rgba(229, 9, 20, 0.08); color: var(--primary); border-left: 4px solid var(--primary); }
+
+    .main-content { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    .section-card { background: var(--panel); padding: 35px; border-radius: 12px; border: 1px solid var(--border); display: none; }
+    .section-card.active { display: block; }
+    .section-card h3 { border-bottom: 2px solid var(--primary); padding-bottom: 12px; margin-bottom: 25px; font-size: 22px; }
+
+    .form-group { margin-bottom: 22px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #ccc; }
+    .form-control { width: 100%; padding: 12px 16px; background: #1a1a1f; border: 1px solid var(--border); border-radius: 8px; color: white; font-size: 15px; }
+    textarea.form-control { height: 120px; resize: none; }
+    .btn-submit { background: var(--primary); color: white; padding: 14px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+    .btn-submit:disabled { background: #555; cursor: not-allowed; }
+
+    .scroll-list { max-height: 350px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: #0f0f11; }
+    .list-item { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .delete-btn { background: #7c040a; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1001; justify-content: center; align-items: center; padding: 20px; }
+    .modal-box { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 500px; padding: 35px; position: relative; }
+    .close-modal { position: absolute; top: 18px; right: 18px; font-size: 24px; cursor: pointer; color: #777; }
+    
+    .btn-helper { background: #0088cc; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold; margin-top: 5px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+    .btn-helper:hover { background: #006699; }
+    
+    .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10001; justify-content: center; align-items: center; font-size: 18px; font-weight: bold; color: white; }
+    
+    .share-section { display: none; margin-top: 20px; background: #1c1c21; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
+    .share-btn { display: inline-block; background: #1da1f2; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div style="text-align: center;">
+      <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 40px; color: var(--primary); margin-bottom: 15px;"></i>
+      <div>कृपया प्रतीक्षा करें (Processing)...</div>
+    </div>
+  </div>
+
+  <div id="loginScreen">
+    <div class="login-box">
+      <h2>Anime Panel Login</h2>
+      <input type="email" id="adminEmailInput" placeholder="Enter Admin Email" style="margin-bottom:15px;" autocomplete="off">
+      <input type="password" id="adminPassInput" placeholder="Enter Admin Password">
+      <button onclick="attemptLogin()">Log In</button>
+    </div>
+  </div>
+
+  <div class="header">
+    <span class="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></span>
+    <span class="site-name">Anime DB Admin Portal</span>
+  </div>
+
+  <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <div class="sidebar" id="sidebar">
+    <div class="menu-item active" onclick="switchSection('addPostSec')"><i class="fa-solid fa-plus"></i> Add Post</div>
+    <div class="menu-item" onclick="switchSection('selectPostSec')"><i class="fa-solid fa-folder-open"></i> Manage Episodes</div>
+    <div class="menu-item" onclick="switchSection('deletePostSec')"><i class="fa-solid fa-trash-can"></i> Delete Content</div>
+    <div class="menu-item" onclick="switchSection('shortenersSec')"><i class="fa-solid fa-link"></i> Shorteners</div>
+    <div class="menu-item" onclick="switchSection('premiumSec')"><i class="fa-solid fa-user-shield"></i> Premium Gmails</div>
+    <div class="menu-item" onclick="switchSection('paidRequestsSec')"><i class="fa-solid fa-lock"></i> Paid Requests</div>
+    <div class="menu-item" onclick="switchSection('linksSec')"><i class="fa-solid fa-gears"></i> General Settings</div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- 1. ADD POST -->
+    <div id="addPostSec" class="section-card active">
+      <h3>Add New Anime Post</h3>
+      <div class="form-group" style="background: rgba(229, 9, 20, 0.05); padding: 15px; border-radius: 8px; border: 1px dashed var(--primary); margin-bottom: 25px;">
+        <label style="color: #ffd700; font-weight: bold;"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto Text Analyzer Parser</label>
+        <textarea id="autoDetectInput" class="form-control" style="height: 120px; font-size: 13px;" placeholder="Pasted structured or unstructured text to autofill fields..." oninput="handleAutoDetect()"></textarea>
+      </div>
+
+      <form id="addPostForm" onsubmit="submitPost(event)">
+        <div class="form-group">
+          <label>Poster Image URL</label>
+          <input type="text" id="postImage" class="form-control" placeholder="https://domain.com/image.jpg">
+          <a href="https://postimages.org" target="_blank" class="btn-helper"><i class="fa-solid fa-upload"></i> Upload Image</a>
+        </div>
+        <div class="form-group">
+          <label>Anime Name</label>
+          <input type="text" id="postName" class="form-control" placeholder="Naruto" required>
+        </div>
+        <div class="form-group">
+          <label>Release Date</label>
+          <input type="text" id="postRelease" class="form-control" placeholder="2002">
+        </div>
+        <div class="form-group">
+          <label>Genre</label>
+          <input type="text" id="postGenre" class="form-control" placeholder="Action Comedy Romance">
+        </div>
+        <div class="form-group">
+          <label>Season</label>
+          <input type="text" id="postSeason" class="form-control" placeholder="Season 01">
+        </div>
+        <div class="form-group">
+          <label>Short Story</label>
+          <textarea id="postStory" class="form-control" placeholder="Describe the story here..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Category (e.g. Hindi Dubbed Anime)</label>
+          <input type="text" id="postCategory" class="form-control" placeholder="Hindi Dubbed Anime" required>
+        </div>
+        <button type="submit" class="btn-submit">Save Post</button>
+      </form>
+    </div>
+
+    <!-- 2. SELECT POST (MANAGE EPISODES) -->
+    <div id="selectPostSec" class="section-card">
+      <h3>Manage Episodes</h3>
+      <div class="scroll-list" id="selectionList"></div>
+    </div>
+
+    <!-- 3. DELETE CONTENT -->
+    <div id="deletePostSec" class="section-card">
+      <h3>Delete Content</h3>
+      <div class="scroll-list" id="deletionList"></div>
+    </div>
+
+    <!-- 4. SHORTENERS -->
+    <div id="shortenersSec" class="section-card">
+      <h3>Rotation Shortener Settings</h3>
+      <div class="scroll-list" id="shortenerList" style="margin-bottom: 25px;"></div>
+      
+      <h4>Configure API Shortener</h4>
+      <form id="shortenerForm" onsubmit="submitShortener(event)">
+        <div class="form-group">
+          <label>Dashboard URL (Exclude https://)</label>
+          <input type="text" id="dashUrl" class="form-control" placeholder="adrinolinks.in" required>
+        </div>
+        <div class="form-group">
+          <label>API Key</label>
+          <input type="text" id="apiKey" class="form-control" placeholder="Paste api developer key" required>
+        </div>
+        <button type="submit" class="btn-submit">Add Shortener</button>
+      </form>
+    </div>
+
+    <!-- 5. PREMIUM MEMBERS -->
+    <div id="premiumSec" class="section-card">
+      <h3>Active Premium Accounts</h3>
+      <div class="scroll-list" id="premiumUsersList" style="margin-bottom: 25px;"></div>
+
+      <h4>Register Gmail Premium Account (Valid 28 Days)</h4>
+      <form id="premiumForm" onsubmit="submitPremium(event)">
+        <div class="form-group">
+          <label>Gmail Address</label>
+          <input type="email" id="premUser" class="form-control" placeholder="user@gmail.com" required>
+        </div>
+        <div class="form-group">
+          <label>Account Password</label>
+          <input type="text" id="premPass" class="form-control" placeholder="Set password" required>
+        </div>
+        <button type="submit" class="btn-submit">Register User</button>
+      </form>
+    </div>
+
+    <!-- 6. PAID PRIVATE REQUESTS -->
+    <div id="paidRequestsSec" class="section-card">
+      <h3>Paid Private Lock Database</h3>
+      <div class="scroll-list" id="paidRequestsList" style="margin-bottom: 25px;"></div>
+
+      <h4>Add Private Locked Request File Link</h4>
+      <form id="paidRequestsForm" onsubmit="submitPaidRequest(event)">
+        <div class="form-group">
+          <label>Locked Code Key Password</label>
+          <input type="text" id="paidPass" class="form-control" placeholder="PASSWORD78" required>
+        </div>
+        <div class="form-group">
+          <label>Original Download Link</label>
+          <input type="url" id="paidUrl" class="form-control" placeholder="https://drive.google.com/..." required>
+        </div>
+        <button type="submit" class="btn-submit">Create Locked link</button>
+      </form>
+    </div>
+
+    <!-- 7. SITE SETTINGS -->
+    <div id="linksSec" class="section-card">
+      <h3>System General Config</h3>
+      <form id="settingsForm" onsubmit="submitSettings(event)" style="margin-bottom: 30px;">
+        <div class="form-group">
+          <label>Telegram Channel Link</label>
+          <input type="url" id="chanLink" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Telegram Group Link</label>
+          <input type="url" id="groupLink" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Global Player Private Password</label>
+          <input type="text" id="playerPass" class="form-control" required>
+        </div>
+        <button type="submit" class="btn-submit">Save Settings</button>
+      </form>
+    </div>
+
+  </div>
+
+  <!-- FIXED STATIC MODAL -->
+  <div class="modal" id="modal">
+    <div class="modal-box">
+      <span class="close-modal" onclick="closeModal()">&times;</span>
+      <h3 style="margin-bottom: 20px; line-height:1.4;">Add Episode to:<br><span id="modalPostName" style="color:#e50914;"></span></h3>
+      
+      <form id="episodeForm" onsubmit="submitEpisode(event)">
+        <input type="hidden" id="modalPostId">
+        
+        <div class="form-group">
+          <label>Episode Number / Label (e.g. 01, ova 01, chapter 01)</label>
+          <input type="text" id="epLabel" class="form-control" placeholder="01" required>
+        </div>
+        <div class="form-group">
+          <label>Quality (e.g. 1080p, 720p)</label>
+          <input type="text" id="epQuality" class="form-control" placeholder="1080p">
+        </div>
+        <div class="form-group">
+          <label>Download Link (Shortener Routing)</label>
+          <input type="url" id="epLink" class="form-control" placeholder="https://download-url.com">
+        </div>
+        <div class="form-group">
+          <label>Stream Play Embed URL</label>
+          <input type="url" id="epPlay" class="form-control" placeholder="https://stream-url.com/embed">
+        </div>
+        
+        <button type="submit" class="btn-submit" id="saveEpBtn">Save Episode</button>
+      </form>
+
+      <div class="share-section" id="twitterShareBlock">
+        <p style="color:#ffd700; margin-bottom:10px;">🌟 Share this episode update on Twitter!</p>
+        <a href="#" id="twitterShareBtn" target="_blank" class="share-btn"><i class="fa-brands fa-twitter"></i> Share on Twitter</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appwrite SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.1"></script>
+  <script>
+    // Appwrite Config
+    const client = new Appwrite.Client()
+      .setEndpoint('https://cloud.appwrite.io/v1')
+      .setProject('6a562e7f0030aa778863');
+
+    const databases = new Appwrite.Databases(client);
+    const account = new Appwrite.Account(client);
+    const DB_ID = '6a562f8a001c9d95454a';
+
+    let loadedPosts = [];
+
+    function showSpinner(show) {
+      document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
+    }
+
+    async function attemptLogin() {
+      const email = document.getElementById("adminEmailInput").value.trim();
+      const pass = document.getElementById("adminPassInput").value.trim();
+      if (!email || !pass) return alert("Enter email and password");
+      
+      showSpinner(true);
+      try {
+        await account.createEmailPasswordSession(email, pass);
+        document.getElementById("loginScreen").style.display = "none";
+        refreshDashboard();
+      } catch (err) {
+        alert("Wrong Login Details or Unauthorized Admin Account!");
+      } finally {
+        showSpinner(false);
+      }
+    }
+
+    async function refreshDashboard() {
+      showSpinner(true);
+      try {
+        // Fetch Posts
+        const postRes = await databases.listDocuments(DB_ID, 'posts');
+        loadedPosts = postRes.documents;
+
+        // Fetch Shorteners
+        const shRes = await databases.listDocuments(DB_ID, 'shorteners');
+        
+        // Fetch PremiumUsers
+        const premRes = await databases.listDocuments(DB_ID, 'premiumusers');
+
+        // Fetch PaidRequests
+        const paidRes = await databases.listDocuments(DB_ID, 'paidrequests');
+
+        // Fetch Settings
+        const setRes = await databases.listDocuments(DB_ID, 'settings');
+        let settings = {};
+        setRes.documents.forEach(doc => {
+          settings[doc.key] = doc.value;
+        });
+
+        renderDashboard(loadedPosts, shRes.documents, premRes.documents, paidRes.documents, settings);
+      } catch(err) {
+        console.error(err);
+      } finally {
+        showSpinner(false);
+      }
+    }
+
+    function renderDashboard(posts, shorteners, premiumUsers, paidRequests, settings) {
+      document.getElementById("selectionList").innerHTML = posts.map(post => `
+        <div class="list-item">
+          <span>${post.name}</span>
+          <button class="delete-btn" style="background:#0066cc;" onclick="openEpisodeModal('${post.$id}')">Add Ep</button>
+        </div>
+      `).join("");
+
+      document.getElementById("deletionList").innerHTML = posts.map(post => `
+        <div class="list-item">
+          <span>${post.name}</span>
+          <button class="delete-btn" onclick="deleteFullPost('${post.$id}')">Delete Post</button>
+        </div>
+      `).join("");
+
+      const shList = document.getElementById("shortenerList");
+      shList.innerHTML = shorteners.length ? shorteners.map(sh => `
+        <div class="list-item">
+          <div><strong>${sh.dashboard_url}</strong></div>
+          <button class="delete-btn" onclick="deleteShortener('${sh.$id}')">Delete</button>
+        </div>
+      `).join("") : "<div style='padding:15px; color:#555;'>No shorteners found.</div>";
+
+      const premList = document.getElementById("premiumUsersList");
+      premList.innerHTML = premiumUsers.length ? premiumUsers.map(u => {
+        let expDate = u.expires_at ? new Date(u.expires_at).toLocaleDateString() : "N/A";
+        return `
+          <div class="list-item">
+            <div>
+              <strong>${u.gmail}</strong><br>
+              <small style="color:#777;">Pass: ${u.password} | Exp: ${expDate}</small>
+            </div>
+            <button class="delete-btn" onclick="deletePremium('${u.$id}')">Delete</button>
+          </div>
+        `;
+      }).join("") : "<div style='padding:15px; color:#555;'>No Premium users found.</div>";
+
+      const pdList = document.getElementById("paidRequestsList");
+      pdList.innerHTML = paidRequests.length ? paidRequests.map(req => `
+        <div class="list-item">
+          <div>
+            <strong>Code: ${req.password}</strong><br>
+            <small style="color:#777;">Target: ${req.original_link}</small>
+          </div>
+          <button class="delete-btn" onclick="deletePaidRequest('${req.$id}')">Delete</button>
+        </div>
+      `).join("") : "<div style='padding:15px; color:#555;'>No locked links found.</div>";
+
+      document.getElementById("chanLink").value = settings.channel_link || "";
+      document.getElementById("groupLink").value = settings.group_link || "";
+      document.getElementById("playerPass").value = settings.player_password || "";
+    }
+
+    function handleAutoDetect() {
+      const text = document.getElementById("autoDetectInput").value.trim();
+      if (!text) return;
+
+      const keys = {
+        name: ["name", "title", "naam"],
+        category: ["category", "cat"],
+        release_date: ["date", "release", "release_date", "release-date"],
+        genres: ["genre", "genres", "category_genres"],
+        season: ["season", "season_number", "season-number"],
+        short_story: ["shortstory", "story", "short_story", "short-story", "description", "desc"]
+      };
+
+      const allAliases = [];
+      for (let k in keys) {
+        allAliases.push(...keys[k]);
+      }
+      
+      const escapedAliases = allAliases.map(a => a.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')).join('|');
+      const keyRegex = new RegExp(`(?:^|\\n)\\s*(${escapedAliases})\\s*[:\\-=]+\\s*`, 'gi');
+
+      let matches = [];
+      let match;
+      while ((match = keyRegex.exec(text)) !== null) {
+        matches.push({
+          keyName: match[1].toLowerCase().trim(),
+          startIndex: match.index,
+          fullLength: match[0].length
+        });
+      }
+
+      matches.sort((a, b) => a.startIndex - b.startIndex);
+
+      let parsedData = {};
+
+      for (let i = 0; i < matches.length; i++) {
+        const current = matches[i];
+        const start = current.startIndex + current.fullLength;
+        const end = (i + 1 < matches.length) ? matches[i + 1].startIndex : text.length;
+        let value = text.substring(start, end).trim();
+
+        let mainField = null;
+        for (let k in keys) {
+          if (keys[k].includes(current.keyName)) {
+            mainField = k;
+            break;
+          }
+        }
+
+        if (mainField) {
+          parsedData[mainField] = value;
+        }
+      }
+
+      if (Object.keys(parsedData).length === 0) {
+        const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+        if (lines.length >= 1) parsedData.name = lines[0];
+        if (lines.length >= 2) parsedData.genres = lines[1];
+        if (lines.length >= 3) parsedData.short_story = lines[2];
+        if (lines.length >= 4) parsedData.release_date = lines[3];
+        if (lines.length >= 5) parsedData.category = lines[4];
+        if (lines.length >= 6) parsedData.season = lines[5];
+      }
+
+      if (parsedData.name) document.getElementById("postName").value = parsedData.name;
+      if (parsedData.category) document.getElementById("postCategory").value = parsedData.category;
+      if (parsedData.release_date) document.getElementById("postRelease").value = parsedData.release_date;
+      if (parsedData.genres) document.getElementById("postGenre").value = parsedData.genres;
+      if (parsedData.season) document.getElementById("postSeason").value = parsedData.season;
+      if (parsedData.short_story) document.getElementById("postStory").value = parsedData.short_story;
+    }
+
+    function openEpisodeModal(postId) {
+      const post = loadedPosts.find(p => p.$id === postId);
+      if (!post) return alert("Error finding selected post!");
+
+      document.getElementById("modalPostId").value = postId;
+      document.getElementById("modalPostName").innerText = post.name;
+      
+      document.getElementById("epLabel").value = "";
+      document.getElementById("epQuality").value = "1080p";
+      document.getElementById("epLink").value = "";
+      document.getElementById("epPlay").value = "";
+      
+      document.getElementById("twitterShareBlock").style.display = "none";
+      document.getElementById("modal").style.display = "flex";
+    }
+
+    async function submitPost(e) {
+      e.preventDefault();
+      showSpinner(true);
+      try {
+        await databases.createDocument(DB_ID, 'posts', 'unique()', {
+          name: document.getElementById("postName").value.trim(),
+          image_url: document.getElementById("postImage").value.trim(),
+          release_date: document.getElementById("postRelease").value.trim(),
+          genres: document.getElementById("postGenre").value.trim(),
+          season: document.getElementById("postSeason").value.trim(),
+          short_story: document.getElementById("postStory").value.trim(),
+          category: document.getElementById("postCategory").value.trim()
+        });
+        alert("Post successfully created!");
+        document.getElementById("addPostForm").reset();
+        document.getElementById("autoDetectInput").value = "";
+        refreshDashboard();
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        showSpinner(false);
+      }
+    }
+
+    async function submitEpisode(e) {
+      e.preventDefault();
+      const postId = document.getElementById("modalPostId").value;
+      const label = document.getElementById("epLabel").value.trim();
+      const link = document.getElementById("epLink").value.trim();
+      const play = document.getElementById("epPlay").value.trim();
+      
+      if (!link && !play) {
+        return alert("At least one link (either Download URL or Stream Play URL) is required to save an episode!");
+      }
+
+      showSpinner(true);
+      try {
+        await databases.createDocument(DB_ID, 'episodes', 'unique()', {
+          post_id: postId,
+          episode_label: label,
+          quality: document.getElementById("epQuality").value.trim(),
+          original_link: link,
+          play_link: play
+        });
+        alert("Episode successfully saved!");
+
+        // Twitter sharing intent creation
+        const post = loadedPosts.find(p => p.$id === postId);
+        const tweetText = encodeURIComponent(`🔥 New Update Added!\n\nAnime: ${post.name}\nEpisode: ${label}\nWatch/Download Now! ⚡`);
+        document.getElementById("twitterShareBtn").href = `https://twitter.com/intent/tweet?text=${tweetText}`;
+        document.getElementById("twitterShareBlock").style.display = "block";
+        
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        showSpinner(false);
+      }
+    }
+
+    async function deleteFullPost(id) {
+      if (confirm("Are you sure you want to delete this anime and all associated episodes?")) {
+        showSpinner(true);
+        try {
+          // Delete Episodes belonging to this post first
+          const epRes = await databases.listDocuments(DB_ID, 'episodes', [
+            Appwrite.Query.equal('post_id', id)
+          ]);
+
+          for(let doc of epRes.documents) {
+            await databases.deleteDocument(DB_ID, 'episodes', doc.$id);
+          }
+
+          // Delete Post
+          await databases.deleteDocument(DB_ID, 'posts', id);
+          alert("Successfully removed.");
+          refreshDashboard();
+        } catch(e) {
+          alert("Delete failed.");
+        } finally {
+          showSpinner(false);
+        }
+      }
+    }
+
+    async function submitShortener(e) {
+      e.preventDefault();
+      let cleanUrl = document.getElementById("dashUrl").value.trim()
+        .replace(/^(https?:\/\/)?(www\.)?/, "")
+        .replace(/\/+$/, "");
+
+      showSpinner(true);
+      try {
+        await databases.createDocument(DB_ID, 'shorteners', 'unique()', {
+          dashboard_url: cleanUrl,
+          api_key: document.getElementById("apiKey").value.trim()
+        });
+        alert("Shortener added successfully.");
+        document.getElementById("shortenerForm").reset();
+        refreshDashboard();
+      } catch(err) {
+        alert("Failed to save.");
+      } finally {
+        showSpinner(false);
+      }
+    }
+
+    async function deleteShortener(id) {
+      if (confirm("Remove this shortener?")) {
+        showSpinner(true);
+        try {
+          await databases.deleteDocument(DB_ID, 'shorteners', id);
+          refreshDashboard();
+        } catch(e) {
+          alert("Error deleting.");
+        } finally {
+          showSpinner(false);
+        }
+      }
+    }
+
+    async function submitPremium(e) {
+      e.preventDefault();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 28);
+
+      showSpinner(true);
+      try {
+        await databases.createDocument(DB_ID, 'premiumusers', 'unique()', {
+          gmail: document.getElementById("premUser").value.trim().toLowerCase(),
+          password: document.getElementById("premPass").value.trim(),
+          expires_at: expiresAt.toISOString(),
+          active_session: ""
+        });
+        alert("Premium registration added successfully.");
+        document.getElementById("premiumForm").reset();
+        refreshDashboard();
+      } catch(e) {
+        alert("Failed to register.");
+      } finally {
+        showSpinner(false);
+      }
+    }
+
+    async function deletePremium(id) {
+      if (confirm("Delete this user?")) {
+        showSpinner(true);
+        try {
+          await databases.deleteDocument(DB_ID, 'premiumusers', id);
+          refreshDashboard();
+        } catch(e) {
+          alert("Delete failed.");
+        } finally {
+          showSpinner(false);
+        }
+      }
+    }
+
+    async function submitPaidRequest(e) {
+      e.preventDefault();
+      showSpinner(true);
+      try {
+        await databases.createDocument(DB_ID, 'paidrequests', 'unique()', {
+          password: document.getElementById("paidPass").value.trim(),
+          original_link: document.getElementById("paidUrl").value.trim()
+        });
+        alert("Locked link created!");
+        document.getElementById("paidRequestsForm").reset();
+        refreshDashboard();
+      } catch(e) {
+        alert("Failed to save.");
+      } finally {
+        showSpinner(false);
+      }
+    }
+
+    async function deletePaidRequest(id) {
+      if (confirm("Delete this request?")) {
+        showSpinner(true);
+        try {
+          await databases.deleteDocument(DB_ID, 'paidrequests', id);
+          refreshDashboard();
+        } catch(e) {
+          alert("Delete failed.");
+        } finally {
+          showSpinner(false);
+        }
+      }
+    }
+
+    async function submitSettings(e) {
+      e.preventDefault();
+      showSpinner(true);
+      try {
+        const keys = {
+          channel_link: document.getElementById("chanLink").value.trim(),
+          group_link: document.getElementById("groupLink").value.trim(),
+          player_password: document.getElementById("playerPass").value.trim()
+        };
+
+        const setRes = await databases.listDocuments(DB_ID, 'settings');
+        
+        for (let k in keys) {
+          const doc = setRes.documents.find(d => d.key === k);
+          if (doc) {
+            await databases.updateDocument(DB_ID, 'settings', doc.$id, { value: keys[k] });
+          } else {
+            await databases.createDocument(DB_ID, 'settings', 'unique()', { key: k, value: keys[k] });
+          }
+        }
+
+        alert("Site configuration updated!");
+        refreshDashboard();
+      } catch(e) {
+        alert("Config save failed: " + e.message);
+      } finally {
+        showSpinner(false);
+      }
+    }
+
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("open");
+      document.getElementById("overlay").classList.toggle("show");
+    }
+
+    function switchSection(secId) {
+      document.querySelectorAll(".section-card").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("active"));
+      document.getElementById(secId).classList.add("active");
+      toggleSidebar();
+    }
+
+    function closeModal() { document.getElementById("modal").style.display = "none"; }
+  </script>
+</body>
+  </html>
