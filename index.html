@@ -212,10 +212,10 @@
   <!-- Appwrite SDK -->
   <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.1"></script>
   <script>
-    // Appwrite Configuration
+    // Appwrite Config
     const client = new Appwrite.Client()
-      .setEndpoint('https://cloud.appwrite.io/v1')
-      .setProject('6a562f7f0030aa778863'); 
+      .setEndpoint('https://fra.cloud.appwrite.io/v1')
+      .setProject('6a562e7f0030aa778863'); 
 
     const databases = new Appwrite.Databases(client);
     const DB_ID = '6a562f8a001c9d95454a';
@@ -230,7 +230,7 @@
 
     async function loadApp() {
       try {
-        // Fetch Posts - Database collections are fully lowercase to show old data
+        // Fetch Posts - Database collections are completely lowercase to show old data
         const postRes = await databases.listDocuments(DB_ID, 'posts');
         allPosts = postRes.documents.map(doc => ({
           id: doc.$id,
@@ -252,14 +252,12 @@
         document.getElementById("tgChannel").href = settings.channel_link || "#";
         document.getElementById("tgGroup").href = settings.group_link || "#";
         
-        // Initial route handling
         handleRouting();
       } catch(e) {
         console.error("Database connection failed", e);
       }
     }
 
-    // Dynamic Hash Navigation Logic
     function handleRouting() {
       const hash = window.location.hash || "#home";
       closeModal();
@@ -295,7 +293,6 @@
       renderPosts(allPosts);
     }
 
-    // Daily seeded selection for today's featured carousel
     function renderFeaturedSlider() {
       const featuredSec = document.getElementById("featuredSection");
       const slider = document.getElementById("featuredSlider");
@@ -307,7 +304,6 @@
 
       featuredSec.style.display = "block";
       
-      // Select 5 pseudo-random posts using current calendar day as seed
       const today = new Date().toDateString();
       let seed = 0;
       for (let i = 0; i < today.length; i++) {
@@ -334,7 +330,6 @@
         `;
       }).join("");
 
-      // Smooth automatic scroll simulation
       clearInterval(window.sliderInterval);
       window.sliderInterval = setInterval(() => {
         if (slider.scrollLeft + slider.clientWidth >= slider.scrollWidth - 10) {
@@ -468,7 +463,6 @@
       }
     }
 
-    // Dynamic Referrer-Safe Redirection Form Submit
     function referrersFormSubmit(targetUrl) {
       const form = document.createElement("form");
       form.method = "GET";
@@ -500,7 +494,6 @@
       showModal(modalHTML);
     }
 
-    // Unique Daily Bypass Key Parameter
     function getDailyBypassParam() {
       const date = new Date();
       const seedString = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
@@ -523,7 +516,6 @@
           return;
         }
 
-        // Add daily parameter to target link
         const bypassKey = getDailyBypassParam();
         const separator = originalLink.includes("?") ? "&" : "?";
         originalLink = `${originalLink}${separator}asi_uid=${bypassKey}`;
@@ -537,7 +529,6 @@
           return;
         }
 
-        // Selection of dynamic ad shortener rotation
         const sh = shorteners[Math.floor(Math.random() * shorteners.length)];
         const apiUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://${sh.dashboard_url}/api?api=${sh.api_key}&url=${encodeURIComponent(originalLink)}`)}`;
         
@@ -552,7 +543,6 @@
         }
         closeModal();
       } catch (e) {
-        // Fallback redirection on bypass fails
         referrersFormSubmit(originalLink);
         closeModal();
       }
