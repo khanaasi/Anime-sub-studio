@@ -101,7 +101,7 @@
     .filter-container button { background: rgba(30,30,35,0.6); border: 1px solid var(--border); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap; }
     .filter-container button.active, .filter-container button:hover { background: var(--primary); border-color: var(--primary); }
 
-    .section-title { padding: 25px 30px 10px 30px; font-size: 26px; text-transform: uppercase; font-weight: 800; }
+    .section-title { padding: 40px 30px 10px 30px; font-size: 26px; text-transform: uppercase; font-weight: 800; }
     .section-title span { color: var(--primary); }
     
     .posts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 25px; padding: 20px 30px; }
@@ -278,6 +278,7 @@
           id: doc.$id,
           name: doc.name,
           image_url: doc.image_url,
+          release_date: doc.release_date,
           genres: doc.genres,
           season: doc.season,
           short_story: doc.short_story,
@@ -404,8 +405,15 @@
       }
     }
 
+    function setType(type, btn) {
+      currentType = type;
+      document.querySelectorAll(".filter-container button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      applyFilter();
+    }
+
     function applyFilter() {
-      let filtered = allAnime.filter(a => {
+      let filtered = allPosts.filter(a => {
         const nameStr = (a.name || "").toLowerCase();
         const typeStr = (a.category || "").toLowerCase();
         const searchStr = currentSearch.toLowerCase();
@@ -464,6 +472,7 @@
             <p><strong>Category:</strong> ${post.category}</p>
             <p><strong>Genre:</strong> ${post.genres || "N/A"}</p>
             <p><strong>Season:</strong> ${post.season || "N/A"}</p>
+            ${post.release_date ? `<p><strong>Release Date:</strong> ${post.release_date}</p>` : ''}
             <p><strong>Story:</strong> ${post.short_story || "N/A"}</p>
           </div>
         </div>
@@ -773,7 +782,6 @@
       document.getElementById("modal").classList.remove("active");
     }
 
-    // Direct A2Z View Setup
     function showAzListUI(type) {
       document.getElementById("gridTitle").innerHTML = `<i class="fas fa-list"></i> ${type} Directory`;
       const grid = document.getElementById("postsGrid");
