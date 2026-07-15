@@ -93,13 +93,6 @@
 
   <div class="main-content">
 
-    <!-- DATABASE SCANNER BLOCK -->
-    <div style="background: #1e1b4b; border: 1px solid #4338ca; padding: 20px; border-radius: 12px; margin-bottom: 30px; display: none;" id="dbScannerBlock">
-      <h4 style="color: #ffd700; margin-bottom: 10px;"><i class="fa-solid fa-database"></i> Database Column Scanner Result:</h4>
-      <p style="font-size: 13px; color: #a1a1aa; margin-bottom: 10px;">Aapke actual database me niche diye gaye columns active hain:</p>
-      <div id="activeColumnsList" style="font-family: monospace; font-size: 14px; color: #34d399; line-height: 1.6;"></div>
-    </div>
-
     <!-- 1. ADD POST -->
     <div id="addPostSec" class="section-card active">
       <h3>Add New Anime Post</h3>
@@ -110,17 +103,13 @@
 
       <form id="addPostForm" onsubmit="submitPost(event)">
         <div class="form-group">
-          <label>Poster Image URL</label>
+          <label>Poster Image URL (Optional)</label>
           <input type="text" id="postImage" class="form-control" placeholder="https://domain.com/image.jpg">
           <a href="https://postimages.org" target="_blank" class="btn-helper"><i class="fa-solid fa-upload"></i> Upload Image</a>
         </div>
         <div class="form-group">
           <label>Anime Name</label>
           <input type="text" id="postName" class="form-control" placeholder="Naruto" required>
-        </div>
-        <div class="form-group">
-          <label>Release Date</label>
-          <input type="text" id="postRelease" class="form-control" placeholder="2002">
         </div>
         <div class="form-group">
           <label>Genre</label>
@@ -246,9 +235,9 @@
   <div class="modal" id="modal">
     <div class="modal-box">
       <span class="close-modal" onclick="closeModal()">&times;</span>
-      <h3 style="margin-bottom: 20px; line-height:1.4;">Add Episode to:<br><span id="modalPostName" style="color:#e50914;"></span></h3>
+      <h3 style="margin-bottom: 20px; line-height:1.4;">Add/Manage Episodes of:<br><span id="modalPostName" style="color:#e50914;"></span></h3>
       
-      <form id="episodeForm" onsubmit="submitEpisode(event)">
+      <form id="episodeForm" onsubmit="submitEpisode(event)" style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
         <input type="hidden" id="modalPostId">
         
         <div class="form-group">
@@ -271,7 +260,11 @@
         <button type="submit" class="btn-submit" id="saveEpBtn">Save Episode</button>
       </form>
 
-      <div class="share-section" id="twitterShareBlock">
+      <!-- LIVE EPISODES LIST & DELETE OPTION -->
+      <h4 style="color:var(--primary); margin-bottom: 10px;">Current Episodes (Tap to Delete):</h4>
+      <div class="scroll-list" id="modalEpisodesContainer" style="max-height: 150px;"></div>
+
+      <div class="share-section" id="twitterShareBlock" style="margin-top:15px;">
         <p style="color:#ffd700; margin-bottom:10px;">🌟 Share this episode update on Twitter!</p>
         <a href="#" id="twitterShareBtn" target="_blank" class="share-btn"><i class="fa-brands fa-twitter"></i> Share on Twitter</a>
       </div>
@@ -296,7 +289,7 @@
       document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
     }
 
-    // On Page Load: Safe anonymous session handle
+    // Guest session initializer
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         await account.get();
@@ -315,7 +308,7 @@
       
       showSpinner(true);
       try {
-        const res = await databases.listDocuments(DB_ID, 'settings', [
+        const res = await databases.listDocuments(DB_ID, 'Settings', [
           Appwrite.Query.equal('key', 'admin_password')
         ]);
 
@@ -328,7 +321,6 @@
         if(enteredPass === actualPassword) {
           document.getElementById("loginScreen").style.display = "none";
           refreshDashboard();
-          scanDatabaseSchema(); // Auto scan schema on success login
         } else {
           alert("Wrong Password!");
         }
@@ -336,28 +328,6 @@
         alert("Database connection failed: " + err.message + "\n\nTip: Appwrite Console me 'khanaasi.github.io' registered check karein.");
       } finally {
         showSpinner(false);
-      }
-    }
-
-    // Database Scanner: Will show what columns actually exist in their Appwrite Posts Collection
-    async function scanDatabaseSchema() {
-      try {
-        const res = await databases.listDocuments(DB_ID, 'posts', [Appwrite.Query.limit(1)]);
-        const scannerBlock = document.getElementById("dbScannerBlock");
-        const listDiv = document.getElementById("activeColumnsList");
-
-        if (res.documents.length > 0) {
-          const doc = res.documents[0];
-          // Get all non-system keys
-          const keys = Object.keys(doc).filter(k => !k.startsWith('$'));
-          listDiv.innerHTML = keys.map(k => `• ${k}`).join("<br>");
-          scannerBlock.style.display = "block";
-        } else {
-          listDiv.innerHTML = "Database empty! Try adding first post without optional fields to inspect columns.";
-          scannerBlock.style.display = "block";
-        }
-      } catch (e) {
-        console.warn("Schema scanning offline", e);
       }
     }
 
@@ -369,16 +339,16 @@
       try {
         if (!newPass) {
           if (currentAdminPasswordDoc) {
-            await databases.deleteDocument(DB_ID, 'settings', currentAdminPasswordDoc.$id);
+            await databases.deleteDocument(DB_ID, 'Settings', currentAdminPasswordDoc.$id);
             alert("Custom password deleted! Reverted back to default (12345asif). Logging out.");
           } else {
             alert("Already on default password (12345asif).");
           }
         } else {
           if (currentAdminPasswordDoc) {
-            await databases.updateDocument(DB_ID, 'settings', currentAdminPasswordDoc.$id, { value: newPass });
+            await databases.updateDocument(DB_ID, 'Settings', currentAdminPasswordDoc.$id, { value: newPass });
           } else {
-            await databases.createDocument(DB_ID, 'settings', 'unique()', { key: 'admin_password', value: newPass });
+            await databases.createDocument(DB_ID, 'Settings', 'unique()', { key: 'admin_password', value: newPass });
           }
           alert("Password updated successfully! Logging out.");
         }
@@ -393,13 +363,13 @@
     async function refreshDashboard() {
       showSpinner(true);
       try {
-        const postRes = await databases.listDocuments(DB_ID, 'posts');
+        const postRes = await databases.listDocuments(DB_ID, 'Posts');
         loadedPosts = postRes.documents;
 
-        const shRes = await databases.listDocuments(DB_ID, 'shorteners');
-        const premRes = await databases.listDocuments(DB_ID, 'premiumusers');
-        const paidRes = await databases.listDocuments(DB_ID, 'paidrequests');
-        const setRes = await databases.listDocuments(DB_ID, 'settings');
+        const shRes = await databases.listDocuments(DB_ID, 'Shorteners');
+        const premRes = await databases.listDocuments(DB_ID, 'PremiumUsers');
+        const paidRes = await databases.listDocuments(DB_ID, 'PaidRequests');
+        const setRes = await databases.listDocuments(DB_ID, 'Settings');
         
         let settings = {};
         setRes.documents.forEach(doc => {
@@ -421,7 +391,7 @@
       document.getElementById("selectionList").innerHTML = posts.map(post => `
         <div class="list-item">
           <span>${post.name}</span>
-          <button class="delete-btn" style="background:#0066cc;" onclick="openEpisodeModal('${post.$id}')">Add Ep</button>
+          <button class="delete-btn" style="background:#0066cc;" onclick="openEpisodeModal('${post.$id}')">Manage Ep</button>
         </div>
       `).join("");
 
@@ -477,7 +447,6 @@
       const keys = {
         name: ["name", "title", "naam"],
         category: ["category", "cat"],
-        release_date: ["date", "release", "release_date", "release-date"],
         genres: ["genre", "genres", "category_genres"],
         season: ["season", "season_number", "season-number"],
         short_story: ["shortstory", "story", "short_story", "short-story", "description", "desc"]
@@ -529,20 +498,18 @@
         if (lines.length >= 1) parsedData.name = lines[0];
         if (lines.length >= 2) parsedData.genres = lines[1];
         if (lines.length >= 3) parsedData.short_story = lines[2];
-        if (lines.length >= 4) parsedData.release_date = lines[3];
-        if (lines.length >= 5) parsedData.category = lines[4];
-        if (lines.length >= 6) parsedData.season = lines[5];
+        if (lines.length >= 4) parsedData.category = lines[3];
+        if (lines.length >= 5) parsedData.season = lines[4];
       }
 
       if (parsedData.name) document.getElementById("postName").value = parsedData.name;
       if (parsedData.category) document.getElementById("postCategory").value = parsedData.category;
-      if (parsedData.release_date) document.getElementById("postRelease").value = parsedData.release_date;
       if (parsedData.genres) document.getElementById("postGenre").value = parsedData.genres;
       if (parsedData.season) document.getElementById("postSeason").value = parsedData.season;
       if (parsedData.short_story) document.getElementById("postStory").value = parsedData.short_story;
     }
 
-    function openEpisodeModal(postId) {
+    async function openEpisodeModal(postId) {
       const post = loadedPosts.find(p => p.$id === postId);
       if (!post) return alert("Error finding selected post!");
 
@@ -556,16 +523,56 @@
       
       document.getElementById("twitterShareBlock").style.display = "none";
       document.getElementById("modal").style.display = "flex";
+
+      // Load episodes for this post specifically in modal with deletion option
+      fetchModalEpisodes(postId);
+    }
+
+    async function fetchModalEpisodes(postId) {
+      const container = document.getElementById("modalEpisodesContainer");
+      container.innerHTML = "<p style='color:#777;text-align:center;'>Loading...</p>";
+      try {
+        const epRes = await databases.listDocuments(DB_ID, 'Episodes', [
+          Appwrite.Query.equal('post_id', postId)
+        ]);
+        const episodes = epRes.documents;
+        if(episodes.length === 0) {
+          container.innerHTML = "<p style='color:#777;text-align:center;padding:10px;'>No episodes added yet.</p>";
+        } else {
+          container.innerHTML = episodes.map(ep => `
+            <div class="list-item" style="padding: 10px 15px; margin-bottom: 5px;">
+              <span>Episode ${ep.episode_label} [${ep.quality || "N/A"}]</span>
+              <button class="delete-btn" style="background:#7c040a;" onclick="deleteEpisode('${ep.$id}', '${postId}')">Delete</button>
+            </div>
+          `).join("");
+        }
+      } catch (err) {
+        container.innerHTML = "<p style='color:red;'>Failed to load episodes.</p>";
+      }
+    }
+
+    async function deleteEpisode(epId, postId) {
+      if(confirm("Are you sure you want to delete this episode?")) {
+        showSpinner(true);
+        try {
+          await databases.deleteDocument(DB_ID, 'Episodes', epId);
+          alert("Episode deleted!");
+          fetchModalEpisodes(postId);
+        } catch(e) {
+          alert("Delete failed.");
+        } finally {
+          showSpinner(false);
+        }
+      }
     }
 
     async function submitPost(e) {
       e.preventDefault();
       showSpinner(true);
       try {
-        await databases.createDocument(DB_ID, 'posts', 'unique()', {
+        await databases.createDocument(DB_ID, 'Posts', 'unique()', {
           name: document.getElementById("postName").value.trim(),
           image_url: document.getElementById("postImage").value.trim(),
-          release_date: document.getElementById("postRelease").value.trim(),
           genres: document.getElementById("postGenre").value.trim(),
           season: document.getElementById("postSeason").value.trim(),
           short_story: document.getElementById("postStory").value.trim(),
@@ -595,7 +602,7 @@
 
       showSpinner(true);
       try {
-        await databases.createDocument(DB_ID, 'episodes', 'unique()', {
+        await databases.createDocument(DB_ID, 'Episodes', 'unique()', {
           post_id: postId,
           episode_label: label,
           quality: document.getElementById("epQuality").value.trim(),
@@ -609,6 +616,7 @@
         document.getElementById("twitterShareBtn").href = `https://twitter.com/intent/tweet?text=${tweetText}`;
         document.getElementById("twitterShareBlock").style.display = "block";
         
+        fetchModalEpisodes(postId); // Refresh modal list
       } catch (error) {
         alert(error.message);
       } finally {
@@ -620,15 +628,15 @@
       if (confirm("Are you sure you want to delete this anime and all associated episodes?")) {
         showSpinner(true);
         try {
-          const epRes = await databases.listDocuments(DB_ID, 'episodes', [
+          const epRes = await databases.listDocuments(DB_ID, 'Episodes', [
             Appwrite.Query.equal('post_id', id)
           ]);
 
           for(let doc of epRes.documents) {
-            await databases.deleteDocument(DB_ID, 'episodes', doc.$id);
+            await databases.deleteDocument(DB_ID, 'Episodes', doc.$id);
           }
 
-          await databases.deleteDocument(DB_ID, 'posts', id);
+          await databases.deleteDocument(DB_ID, 'Posts', id);
           alert("Successfully removed.");
           refreshDashboard();
         } catch(e) {
@@ -647,7 +655,7 @@
 
       showSpinner(true);
       try {
-        await databases.createDocument(DB_ID, 'shorteners', 'unique()', {
+        await databases.createDocument(DB_ID, 'Shorteners', 'unique()', {
           dashboard_url: cleanUrl,
           api_key: document.getElementById("apiKey").value.trim()
         });
@@ -665,7 +673,7 @@
       if (confirm("Remove this shortener?")) {
         showSpinner(true);
         try {
-          await databases.deleteDocument(DB_ID, 'shorteners', id);
+          await databases.deleteDocument(DB_ID, 'Shorteners', id);
           refreshDashboard();
         } catch(e) {
           alert("Error deleting.");
@@ -682,7 +690,7 @@
 
       showSpinner(true);
       try {
-        await databases.createDocument(DB_ID, 'premiumusers', 'unique()', {
+        await databases.createDocument(DB_ID, 'PremiumUsers', 'unique()', {
           gmail: document.getElementById("premUser").value.trim().toLowerCase(),
           password: document.getElementById("premPass").value.trim(),
           expires_at: expiresAt.toISOString(),
@@ -702,7 +710,7 @@
       if (confirm("Delete this user?")) {
         showSpinner(true);
         try {
-          await databases.deleteDocument(DB_ID, 'premiumusers', id);
+          await databases.deleteDocument(DB_ID, 'PremiumUsers', id);
           refreshDashboard();
         } catch(e) {
           alert("Delete failed.");
@@ -716,7 +724,7 @@
       e.preventDefault();
       showSpinner(true);
       try {
-        await databases.createDocument(DB_ID, 'paidrequests', 'unique()', {
+        await databases.createDocument(DB_ID, 'PaidRequests', 'unique()', {
           password: document.getElementById("paidPass").value.trim(),
           original_link: document.getElementById("paidUrl").value.trim()
         });
@@ -734,7 +742,7 @@
       if (confirm("Delete this request?")) {
         showSpinner(true);
         try {
-          await databases.deleteDocument(DB_ID, 'paidrequests', id);
+          await databases.deleteDocument(DB_ID, 'PaidRequests', id);
           refreshDashboard();
         } catch(e) {
           alert("Delete failed.");
@@ -754,14 +762,14 @@
           player_password: document.getElementById("playerPass").value.trim()
         };
 
-        const setRes = await databases.listDocuments(DB_ID, 'settings');
+        const setRes = await databases.listDocuments(DB_ID, 'Settings');
         
         for (let k in keys) {
           const doc = setRes.documents.find(d => d.key === k);
           if (doc) {
-            await databases.updateDocument(DB_ID, 'settings', doc.$id, { value: keys[k] });
+            await databases.updateDocument(DB_ID, 'Settings', doc.$id, { value: keys[k] });
           } else {
-            await databases.createDocument(DB_ID, 'settings', 'unique()', { key: k, value: keys[k] });
+            await databases.createDocument(DB_ID, 'Settings', 'unique()', { key: k, value: keys[k] });
           }
         }
 
