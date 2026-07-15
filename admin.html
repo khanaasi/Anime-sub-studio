@@ -278,23 +278,29 @@
   <!-- Appwrite SDK -->
   <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.1"></script>
   <script>
-    const client = new Appwrite.Client()
-      .setEndpoint('https://fra.cloud.appwrite.io/v1')
-      .setProject('6a562e7f0030aa778863');
-
-    const databases = new Appwrite.Databases(client);
-    const account = new Appwrite.Account(client);
+    // Appwrite Safe Initialization
+    let client, databases, account, Query;
     const DB_ID = '6a562f8a001c9d95454a';
-
     let loadedPosts = [];
     let currentAdminPasswordDoc = null;
 
-    function showSpinner(show) {
-      document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
-    }
+    window.onload = function() {
+      // Destructure global Appwrite Object securely
+      const { Client, Databases, Account, Query: AppwriteQuery } = Appwrite;
+      
+      client = new Client()
+        .setEndpoint('https://fra.cloud.appwrite.io/v1')
+        .setProject('6a562e7f0030aa778863');
 
-    // Guest session initializer
-    document.addEventListener("DOMContentLoaded", async () => {
+      databases = new Databases(client);
+      account = new Account(client);
+      Query = AppwriteQuery;
+
+      // Guest session check/start on loading
+      initGuestSession();
+    };
+
+    async function initGuestSession() {
       try {
         await account.get();
       } catch (e) {
@@ -304,7 +310,11 @@
           console.warn("Guest session failed or bypassed");
         }
       }
-    });
+    }
+
+    function showSpinner(show) {
+      document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
+    }
 
     async function attemptLogin() {
       const enteredPass = document.getElementById("adminPassInput").value.trim();
@@ -312,7 +322,7 @@
       
       showSpinner(true);
       try {
-        // Securely authenticate the session behind the scenes on Appwrite Auth using default admin email
+        // Authenticate as a real admin session on Appwrite Auth
         await account.createEmailPasswordSession('admin@studio.com', enteredPass);
         document.getElementById("loginScreen").style.display = "none";
         refreshDashboard();
@@ -330,7 +340,6 @@
       
       showSpinner(true);
       try {
-        // Update Appwrite Auth Account Password directly so it remains 100% secure
         await account.updatePassword(newPass);
         alert("Password updated successfully! Please login with your new password.");
         await account.deleteSession('current');
@@ -514,7 +523,7 @@
       container.innerHTML = "<p style='color:#777;text-align:center;'>Loading...</p>";
       try {
         const epRes = await databases.listDocuments(DB_ID, 'Episodes', [
-          Appwrite.Query.equal('post_id', postId)
+          Query.equal('post_id', postId)
         ]);
         const episodes = epRes.documents;
         if(episodes.length === 0) {
@@ -561,7 +570,7 @@
         };
 
         // Fetch 1 post document to check what columns exist, mapping release_date safely
-        const testRes = await databases.listDocuments(DB_ID, 'Posts', [Appwrite.Query.limit(1)]);
+        const testRes = await databases.listDocuments(DB_ID, 'Posts', [Query.limit(1)]);
         if (testRes.documents.length > 0) {
           const docKeys = Object.keys(testRes.documents[0]).filter(k => !k.startsWith('$'));
           
@@ -589,7 +598,7 @@
     async function submitEpisode(e) {
       e.preventDefault();
       const postId = document.getElementById("modalPostId").value;
-      const label = document.getElementById("epLabel").value.trim(); // String label format (e.g. 01-06)
+      const label = document.getElementById("epLabel").value.trim(); // Free text label support (e.g., 01-06, movie)
       const link = document.getElementById("epLink").value.trim();
       const play = document.getElementById("epPlay").value.trim();
       
@@ -626,7 +635,7 @@
         showSpinner(true);
         try {
           const epRes = await databases.listDocuments(DB_ID, 'Episodes', [
-            Appwrite.Query.equal('post_id', id)
+            Query.equal('post_id', id)
           ]);
 
           for(let doc of epRes.documents) {
