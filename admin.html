@@ -93,6 +93,13 @@
 
   <div class="main-content">
 
+    <!-- DATABASE SCANNER BLOCK -->
+    <div style="background: #1e1b4b; border: 1px solid #4338ca; padding: 20px; border-radius: 12px; margin-bottom: 30px; display: none;" id="dbScannerBlock">
+      <h4 style="color: #ffd700; margin-bottom: 10px;"><i class="fa-solid fa-database"></i> Database Column Scanner Result:</h4>
+      <p style="font-size: 13px; color: #a1a1aa; margin-bottom: 10px;">Aapke actual database me niche diye gaye columns active hain:</p>
+      <div id="activeColumnsList" style="font-family: monospace; font-size: 14px; color: #34d399; line-height: 1.6;"></div>
+    </div>
+
     <!-- 1. ADD POST -->
     <div id="addPostSec" class="section-card active">
       <h3>Add New Anime Post</h3>
@@ -289,7 +296,7 @@
       document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
     }
 
-    // On Page Load: Handle Anonymous sessions automatically to prevent guest connection block
+    // On Page Load: Safe anonymous session handle
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         await account.get();
@@ -308,7 +315,6 @@
       
       showSpinner(true);
       try {
-        // Query password from settings collection
         const res = await databases.listDocuments(DB_ID, 'settings', [
           Appwrite.Query.equal('key', 'admin_password')
         ]);
@@ -322,13 +328,36 @@
         if(enteredPass === actualPassword) {
           document.getElementById("loginScreen").style.display = "none";
           refreshDashboard();
+          scanDatabaseSchema(); // Auto scan schema on success login
         } else {
           alert("Wrong Password!");
         }
       } catch (err) {
-        alert("Database connection failed: " + err.message + "\n\nTip: Appwrite console me jaakar 'khanaasi.github.io' ko Web Platform zaroor add karein.");
+        alert("Database connection failed: " + err.message + "\n\nTip: Appwrite Console me 'khanaasi.github.io' registered check karein.");
       } finally {
         showSpinner(false);
+      }
+    }
+
+    // Database Scanner: Will show what columns actually exist in their Appwrite Posts Collection
+    async function scanDatabaseSchema() {
+      try {
+        const res = await databases.listDocuments(DB_ID, 'posts', [Appwrite.Query.limit(1)]);
+        const scannerBlock = document.getElementById("dbScannerBlock");
+        const listDiv = document.getElementById("activeColumnsList");
+
+        if (res.documents.length > 0) {
+          const doc = res.documents[0];
+          // Get all non-system keys
+          const keys = Object.keys(doc).filter(k => !k.startsWith('$'));
+          listDiv.innerHTML = keys.map(k => `• ${k}`).join("<br>");
+          scannerBlock.style.display = "block";
+        } else {
+          listDiv.innerHTML = "Database empty! Try adding first post without optional fields to inspect columns.";
+          scannerBlock.style.display = "block";
+        }
+      } catch (e) {
+        console.warn("Schema scanning offline", e);
       }
     }
 
@@ -760,4 +789,4 @@
     function closeModal() { document.getElementById("modal").style.display = "none"; }
   </script>
 </body>
-  </html>
+</html>
