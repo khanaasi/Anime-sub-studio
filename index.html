@@ -230,8 +230,8 @@
 
     async function loadApp() {
       try {
-        // Fetch Posts
-        const postRes = await databases.listDocuments(DB_ID, 'Posts');
+        // Fetch Posts - Database collections are fully lowercase to show old data
+        const postRes = await databases.listDocuments(DB_ID, 'posts');
         allPosts = postRes.documents.map(doc => ({
           id: doc.$id,
           name: doc.name,
@@ -244,7 +244,7 @@
         }));
 
         // Fetch Settings
-        const settingsRes = await databases.listDocuments(DB_ID, 'Settings');
+        const settingsRes = await databases.listDocuments(DB_ID, 'settings');
         settingsRes.documents.forEach(doc => {
           settings[doc.key] = doc.value;
         });
@@ -407,7 +407,7 @@
       `;
 
       try {
-        const epRes = await databases.listDocuments(DB_ID, 'Episodes', [
+        const epRes = await databases.listDocuments(DB_ID, 'episodes', [
           Appwrite.Query.equal('post_id', postId)
         ]);
         
@@ -514,7 +514,7 @@
     async function solveShortener(epId) {
       showModal(`<h3>Shortening Link...</h3><p>Connecting with server routing, please wait...</p>`);
       try {
-        const ep = await databases.getDocument(DB_ID, 'Episodes', epId);
+        const ep = await databases.getDocument(DB_ID, 'episodes', epId);
         let originalLink = ep.original_link;
 
         if (!originalLink) {
@@ -528,7 +528,7 @@
         const separator = originalLink.includes("?") ? "&" : "?";
         originalLink = `${originalLink}${separator}asi_uid=${bypassKey}`;
 
-        const shRes = await databases.listDocuments(DB_ID, 'Shorteners');
+        const shRes = await databases.listDocuments(DB_ID, 'shorteners');
         const shorteners = shRes.documents;
 
         if (shorteners.length === 0) {
@@ -572,7 +572,7 @@
       const actualPass = settings.player_password || "stream123";
 
       if(pass === actualPass) {
-        const ep = await databases.getDocument(DB_ID, 'Episodes', epId);
+        const ep = await databases.getDocument(DB_ID, 'episodes', epId);
         referrersFormSubmit(ep.play_link);
         closeModal();
       } else {
@@ -596,7 +596,7 @@
       const pass = document.getElementById("premPass").value.trim();
       
       try {
-        const res = await databases.listDocuments(DB_ID, 'PremiumUsers', [
+        const res = await databases.listDocuments(DB_ID, 'premiumusers', [
           Appwrite.Query.equal('gmail', gmail),
           Appwrite.Query.equal('password', pass)
         ]);
@@ -607,7 +607,7 @@
           const expiry = new Date(user.expires_at);
 
           if (expiry > now) {
-            const ep = await databases.getDocument(DB_ID, 'Episodes', epId);
+            const ep = await databases.getDocument(DB_ID, 'episodes', epId);
             referrersFormSubmit(ep.original_link);
             closeModal();
           } else {
@@ -635,7 +635,7 @@
     async function unlockPaidRequest() {
       const pass = document.getElementById("paidKeyInput").value.trim();
       try {
-        const res = await databases.listDocuments(DB_ID, 'PaidRequests', [
+        const res = await databases.listDocuments(DB_ID, 'paidrequests', [
           Appwrite.Query.equal('password', pass)
         ]);
 
