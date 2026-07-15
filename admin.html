@@ -245,7 +245,7 @@
         <input type="hidden" id="modalPostId">
         
         <div class="form-group">
-          <label>Episode Number / Label (e.g. 01, ova 01, chapter 01)</label>
+          <label>Episode Number / Label (e.g. 01, ova 01, chapter 01, 01-06)</label>
           <input type="text" id="epLabel" class="form-control" placeholder="01" required>
         </div>
         <div class="form-group">
@@ -312,25 +312,12 @@
       
       showSpinner(true);
       try {
-        // Direct Query from Settings Database Collection
-        const res = await databases.listDocuments(DB_ID, 'Settings', [
-          Appwrite.Query.equal('key', 'admin_password')
-        ]);
-
-        let actualPassword = "12345asif"; 
-        if(res.documents.length > 0) {
-          currentAdminPasswordDoc = res.documents[0];
-          actualPassword = currentAdminPasswordDoc.value;
-        }
-
-        if(enteredPass === actualPassword) {
-          document.getElementById("loginScreen").style.display = "none";
-          refreshDashboard();
-        } else {
-          alert("Wrong Password!");
-        }
+        // Securely authenticate the session behind the scenes on Appwrite Auth using default admin email
+        await account.createEmailPasswordSession('admin@studio.com', enteredPass);
+        document.getElementById("loginScreen").style.display = "none";
+        refreshDashboard();
       } catch (err) {
-        alert("Database connection failed: " + err.message + "\n\nTip: Settings Table Permissions checking verify karein.");
+        alert("Wrong Admin Password!");
       } finally {
         showSpinner(false);
       }
@@ -339,24 +326,14 @@
     async function changeAdminPassword(e) {
       e.preventDefault();
       const newPass = document.getElementById("newAdminPass").value.trim();
+      if(!newPass) return alert("Please type a new password.");
       
       showSpinner(true);
       try {
-        if (!newPass) {
-          if (currentAdminPasswordDoc) {
-            await databases.deleteDocument(DB_ID, 'Settings', currentAdminPasswordDoc.$id);
-            alert("Custom password deleted! Reverted back to default (12345asif). Logging out.");
-          } else {
-            alert("Already on default password (12345asif).");
-          }
-        } else {
-          if (currentAdminPasswordDoc) {
-            await databases.updateDocument(DB_ID, 'Settings', currentAdminPasswordDoc.$id, { value: newPass });
-          } else {
-            await databases.createDocument(DB_ID, 'Settings', 'unique()', { key: 'admin_password', value: newPass });
-          }
-          alert("Password updated successfully! Logging out.");
-        }
+        // Update Appwrite Auth Account Password directly so it remains 100% secure
+        await account.updatePassword(newPass);
+        alert("Password updated successfully! Please login with your new password.");
+        await account.deleteSession('current');
         location.reload();
       } catch(err) {
         alert("Failed to update password: " + err.message);
@@ -380,9 +357,6 @@
         setRes.documents.forEach(doc => {
           settings[doc.key] = doc.value;
         });
-
-        const pwDoc = setRes.documents.find(d => d.key === 'admin_password');
-        if (pwDoc) currentAdminPasswordDoc = pwDoc;
 
         renderDashboard(loadedPosts, shRes.documents, premRes.documents, paidRes.documents, settings);
       } catch(err) {
@@ -615,7 +589,7 @@
     async function submitEpisode(e) {
       e.preventDefault();
       const postId = document.getElementById("modalPostId").value;
-      const label = document.getElementById("epLabel").value.trim();
+      const label = document.getElementById("epLabel").value.trim(); // String label format (e.g. 01-06)
       const link = document.getElementById("epLink").value.trim();
       const play = document.getElementById("epPlay").value.trim();
       
@@ -820,4 +794,4 @@
     function closeModal() { document.getElementById("modal").style.display = "none"; }
   </script>
 </body>
-  </html>
+</html>
