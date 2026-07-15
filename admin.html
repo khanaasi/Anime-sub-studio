@@ -2,7 +2,7 @@
 <html lang="hi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Anime Admin Panel</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -45,16 +45,17 @@
     .delete-btn { background: #7c040a; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
 
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1001; justify-content: center; align-items: center; padding: 20px; }
-    .modal-box { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 500px; padding: 35px; position: relative; }
+    .modal-box { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 500px; padding: 35px; position: relative; max-height: 90vh; overflow-y: auto; }
     .close-modal { position: absolute; top: 18px; right: 18px; font-size: 24px; cursor: pointer; color: #777; }
     
     .btn-helper { background: #0088cc; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold; margin-top: 5px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
     .btn-helper:hover { background: #006699; }
     
     .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10001; justify-content: center; align-items: center; font-size: 18px; font-weight: bold; color: white; }
-    
     .share-section { display: none; margin-top: 20px; background: #1c1c21; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
     .share-btn { display: inline-block; background: #1da1f2; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; margin-top: 10px; }
+    
+    .modal-list-title { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px; font-size: 15px; color: var(--primary); font-weight: bold; }
   </style>
 </head>
 <body>
@@ -66,10 +67,11 @@
     </div>
   </div>
 
+  <!-- Single Password Login Screen -->
   <div id="loginScreen">
     <div class="login-box">
       <h2>Anime Panel Login</h2>
-      <input type="password" id="adminPassInput" placeholder="Enter Admin Password">
+      <input type="password" id="adminPassInput" placeholder="Enter Secure Admin Password">
       <button onclick="attemptLogin()">Log In</button>
     </div>
   </div>
@@ -103,7 +105,7 @@
 
       <form id="addPostForm" onsubmit="submitPost(event)">
         <div class="form-group">
-          <label>Poster Image URL (Optional)</label>
+          <label>Poster Image URL</label>
           <input type="text" id="postImage" class="form-control" placeholder="https://domain.com/image.jpg">
           <a href="https://postimages.org" target="_blank" class="btn-helper"><i class="fa-solid fa-upload"></i> Upload Image</a>
         </div>
@@ -152,11 +154,11 @@
       <h3>Rotation Shortener Settings</h3>
       <div class="scroll-list" id="shortenerList" style="margin-bottom: 25px;"></div>
       
-      <h4>Configure API Shortener</h4>
+      <h4>Configure API Shortener (Maximum 3)</h4>
       <form id="shortenerForm" onsubmit="submitShortener(event)">
         <div class="form-group">
           <label>Dashboard URL (Exclude https://)</label>
-          <input type="text" id="dashUrl" class="form-control" placeholder="adrinolinks.in" required>
+          <input type="text" id="dashUrl" class="form-control" placeholder="gplinks.in" required>
         </div>
         <div class="form-group">
           <label>API Key</label>
@@ -222,26 +224,17 @@
         </div>
         <button type="submit" class="btn-submit">Save Settings</button>
       </form>
-
-      <h3>Change Admin Password</h3>
-      <form id="changePassForm" onsubmit="changeAdminPassword(event)">
-        <div class="form-group">
-          <label>Enter New Password (Leave empty and click Update to delete custom password & reset to 12345asif)</label>
-          <input type="text" id="newAdminPass" class="form-control" placeholder="New Password">
-        </div>
-        <button type="submit" class="btn-submit" style="background:#555;">Update Admin Password</button>
-      </form>
     </div>
 
   </div>
 
-  <!-- FIXED STATIC MODAL -->
+  <!-- MANAGE EPISODES MODAL -->
   <div class="modal" id="modal">
     <div class="modal-box">
       <span class="close-modal" onclick="closeModal()">&times;</span>
-      <h3 style="margin-bottom: 20px; line-height:1.4;">Add/Manage Episodes of:<br><span id="modalPostName" style="color:#e50914;"></span></h3>
+      <h3 style="margin-bottom: 20px; line-height:1.4;">Manage Episodes for:<br><span id="modalPostName" style="color:#e50914;"></span></h3>
       
-      <form id="episodeForm" onsubmit="submitEpisode(event)" style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
+      <form id="episodeForm" onsubmit="submitEpisode(event)">
         <input type="hidden" id="modalPostId">
         
         <div class="form-group">
@@ -264,51 +257,40 @@
         <button type="submit" class="btn-submit" id="saveEpBtn">Save Episode</button>
       </form>
 
-      <!-- LIVE EPISODES LIST & DELETE OPTION -->
-      <h4 style="color:var(--primary); margin-bottom: 10px;">Current Episodes (Tap to Delete):</h4>
-      <div class="scroll-list" id="modalEpisodesContainer" style="max-height: 150px;"></div>
-
-      <div class="share-section" id="twitterShareBlock" style="margin-top:15px;">
+      <div class="share-section" id="twitterShareBlock">
         <p style="color:#ffd700; margin-bottom:10px;">🌟 Share this episode update on Twitter!</p>
         <a href="#" id="twitterShareBtn" target="_blank" class="share-btn"><i class="fa-brands fa-twitter"></i> Share on Twitter</a>
       </div>
+
+      <div class="modal-list-title">Active Published Episodes</div>
+      <div id="modalEpisodesList" class="scroll-list" style="margin-top: 10px; max-height: 200px;"></div>
     </div>
   </div>
 
   <!-- Appwrite SDK -->
   <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.1"></script>
   <script>
-    // Appwrite Safe Initialization
-    let client, databases, account, Query;
+    // Appwrite Configuration
+    const client = new Appwrite.Client()
+      .setEndpoint('https://cloud.appwrite.io/v1')
+      .setProject('6a562f7f0030aa778863'); 
+
+    const databases = new Appwrite.Databases(client);
+    const account = new Appwrite.Account(client);
     const DB_ID = '6a562f8a001c9d95454a';
+
     let loadedPosts = [];
-    let currentAdminPasswordDoc = null;
 
-    window.onload = function() {
-      // Destructure global Appwrite Object securely
-      const { Client, Databases, Account, Query: AppwriteQuery } = Appwrite;
-      
-      client = new Client()
-        .setEndpoint('https://fra.cloud.appwrite.io/v1')
-        .setProject('6a562e7f0030aa778863');
+    // Automatically check for an active secure session on load
+    document.addEventListener("DOMContentLoaded", checkSession);
 
-      databases = new Databases(client);
-      account = new Account(client);
-      Query = AppwriteQuery;
-
-      // Guest session check/start on loading
-      initGuestSession();
-    };
-
-    async function initGuestSession() {
+    async function checkSession() {
       try {
         await account.get();
-      } catch (e) {
-        try {
-          await account.createAnonymousSession();
-        } catch (err) {
-          console.warn("Guest session failed or bypassed");
-        }
+        document.getElementById("loginScreen").style.display = "none";
+        refreshDashboard();
+      } catch(e) {
+        document.getElementById("loginScreen").style.display = "flex";
       }
     }
 
@@ -316,36 +298,19 @@
       document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
     }
 
+    // Secure Single-Password login using a unified hidden account
     async function attemptLogin() {
-      const enteredPass = document.getElementById("adminPassInput").value.trim();
-      if (!enteredPass) return alert("Enter password");
+      const pass = document.getElementById("adminPassInput").value.trim();
+      if (!pass) return alert("Please enter password");
       
       showSpinner(true);
       try {
-        // Authenticate as a real admin session on Appwrite Auth
-        await account.createEmailPasswordSession('admin@studio.com', enteredPass);
+        // Generates active dashboard write-session
+        await account.createEmailPasswordSession('admin@animestudio.com', pass);
         document.getElementById("loginScreen").style.display = "none";
         refreshDashboard();
       } catch (err) {
-        alert("Wrong Admin Password!");
-      } finally {
-        showSpinner(false);
-      }
-    }
-
-    async function changeAdminPassword(e) {
-      e.preventDefault();
-      const newPass = document.getElementById("newAdminPass").value.trim();
-      if(!newPass) return alert("Please type a new password.");
-      
-      showSpinner(true);
-      try {
-        await account.updatePassword(newPass);
-        alert("Password updated successfully! Please login with your new password.");
-        await account.deleteSession('current');
-        location.reload();
-      } catch(err) {
-        alert("Failed to update password: " + err.message);
+        alert("Wrong Admin Password! Confirm your admin@animestudio.com user exists in Console.");
       } finally {
         showSpinner(false);
       }
@@ -354,14 +319,21 @@
     async function refreshDashboard() {
       showSpinner(true);
       try {
+        // Fetch Posts
         const postRes = await databases.listDocuments(DB_ID, 'Posts');
         loadedPosts = postRes.documents;
 
+        // Fetch Shorteners
         const shRes = await databases.listDocuments(DB_ID, 'Shorteners');
-        const premRes = await databases.listDocuments(DB_ID, 'PremiumUsers');
-        const paidRes = await databases.listDocuments(DB_ID, 'PaidRequests');
-        const setRes = await databases.listDocuments(DB_ID, 'Settings');
         
+        // Fetch PremiumUsers
+        const premRes = await databases.listDocuments(DB_ID, 'PremiumUsers');
+
+        // Fetch PaidRequests
+        const paidRes = await databases.listDocuments(DB_ID, 'PaidRequests');
+
+        // Fetch Settings
+        const setRes = await databases.listDocuments(DB_ID, 'Settings');
         let settings = {};
         setRes.documents.forEach(doc => {
           settings[doc.key] = doc.value;
@@ -494,10 +466,10 @@
 
       if (parsedData.name) document.getElementById("postName").value = parsedData.name;
       if (parsedData.category) document.getElementById("postCategory").value = parsedData.category;
+      if (parsedData.release_date) document.getElementById("postRelease").value = parsedData.release_date;
       if (parsedData.genres) document.getElementById("postGenre").value = parsedData.genres;
       if (parsedData.season) document.getElementById("postSeason").value = parsedData.season;
       if (parsedData.short_story) document.getElementById("postStory").value = parsedData.short_story;
-      if (parsedData.release_date) document.getElementById("postRelease").value = parsedData.release_date;
     }
 
     async function openEpisodeModal(postId) {
@@ -515,41 +487,42 @@
       document.getElementById("twitterShareBlock").style.display = "none";
       document.getElementById("modal").style.display = "flex";
 
-      fetchModalEpisodes(postId);
+      await loadModalEpisodes(postId);
     }
 
-    async function fetchModalEpisodes(postId) {
-      const container = document.getElementById("modalEpisodesContainer");
-      container.innerHTML = "<p style='color:#777;text-align:center;'>Loading...</p>";
+    // List and delete modal episodes
+    async function loadModalEpisodes(postId) {
+      const epListContainer = document.getElementById("modalEpisodesList");
+      epListContainer.innerHTML = `<div style="padding:15px; text-align:center;"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading...</div>`;
+      
       try {
         const epRes = await databases.listDocuments(DB_ID, 'Episodes', [
-          Query.equal('post_id', postId)
+          Appwrite.Query.equal('post_id', postId)
         ]);
-        const episodes = epRes.documents;
-        if(episodes.length === 0) {
-          container.innerHTML = "<p style='color:#777;text-align:center;padding:10px;'>No episodes added yet.</p>";
+        
+        if (epRes.documents.length === 0) {
+          epListContainer.innerHTML = `<div style="padding:15px; color:#555; text-align:center;">No published episodes.</div>`;
         } else {
-          container.innerHTML = episodes.map(ep => `
-            <div class="list-item" style="padding: 10px 15px; margin-bottom: 5px;">
-              <span>Episode ${ep.episode_label} [${ep.quality || "N/A"}]</span>
-              <button class="delete-btn" style="background:#7c040a;" onclick="deleteEpisode('${ep.$id}', '${postId}')">Delete</button>
+          epListContainer.innerHTML = epRes.documents.map(ep => `
+            <div class="list-item" style="padding:10px 15px;">
+              <span><strong>Ep:</strong> ${ep.episode_label} [${ep.quality || 'N/A'}]</span>
+              <button class="delete-btn" style="padding:4px 10px; font-size:11px;" onclick="deleteEpisode('${ep.$id}', '${postId}')">Delete</button>
             </div>
           `).join("");
         }
-      } catch (err) {
-        container.innerHTML = "<p style='color:red;'>Failed to load episodes.</p>";
+      } catch(err) {
+        epListContainer.innerHTML = `<div style="padding:15px; color:red; text-align:center;">Failed to load.</div>`;
       }
     }
 
     async function deleteEpisode(epId, postId) {
-      if(confirm("Are you sure you want to delete this episode?")) {
+      if (confirm("Delete this episode?")) {
         showSpinner(true);
         try {
           await databases.deleteDocument(DB_ID, 'Episodes', epId);
-          alert("Episode deleted!");
-          fetchModalEpisodes(postId);
-        } catch(e) {
-          alert("Delete failed.");
+          await loadModalEpisodes(postId);
+        } catch(err) {
+          alert("Error deleting episode.");
         } finally {
           showSpinner(false);
         }
@@ -560,30 +533,15 @@
       e.preventDefault();
       showSpinner(true);
       try {
-        const payload = {
+        await databases.createDocument(DB_ID, 'Posts', 'unique()', {
           name: document.getElementById("postName").value.trim(),
           image_url: document.getElementById("postImage").value.trim(),
+          release_date: document.getElementById("postRelease").value.trim(),
           genres: document.getElementById("postGenre").value.trim(),
           season: document.getElementById("postSeason").value.trim(),
           short_story: document.getElementById("postStory").value.trim(),
           category: document.getElementById("postCategory").value.trim()
-        };
-
-        // Fetch 1 post document to check what columns exist, mapping release_date safely
-        const testRes = await databases.listDocuments(DB_ID, 'Posts', [Query.limit(1)]);
-        if (testRes.documents.length > 0) {
-          const docKeys = Object.keys(testRes.documents[0]).filter(k => !k.startsWith('$'));
-          
-          // If you created 'release_date' column, add it to payload
-          if (docKeys.includes('release_date')) {
-            payload.release_date = document.getElementById("postRelease").value.trim();
-          }
-        } else {
-          // If DB empty, write release_date as safe optional fallback
-          payload.release_date = document.getElementById("postRelease").value.trim();
-        }
-
-        await databases.createDocument(DB_ID, 'Posts', 'unique()', payload);
+        });
         alert("Post successfully created!");
         document.getElementById("addPostForm").reset();
         document.getElementById("autoDetectInput").value = "";
@@ -598,12 +556,12 @@
     async function submitEpisode(e) {
       e.preventDefault();
       const postId = document.getElementById("modalPostId").value;
-      const label = document.getElementById("epLabel").value.trim(); // Free text label support (e.g., 01-06, movie)
+      const label = document.getElementById("epLabel").value.trim();
       const link = document.getElementById("epLink").value.trim();
       const play = document.getElementById("epPlay").value.trim();
       
       if (!link && !play) {
-        return alert("At least one link is required to save an episode!");
+        return alert("At least one link (either Download URL or Stream Play URL) is required to save an episode!");
       }
 
       showSpinner(true);
@@ -622,7 +580,7 @@
         document.getElementById("twitterShareBtn").href = `https://twitter.com/intent/tweet?text=${tweetText}`;
         document.getElementById("twitterShareBlock").style.display = "block";
         
-        fetchModalEpisodes(postId);
+        await loadModalEpisodes(postId);
       } catch (error) {
         alert(error.message);
       } finally {
@@ -635,7 +593,7 @@
         showSpinner(true);
         try {
           const epRes = await databases.listDocuments(DB_ID, 'Episodes', [
-            Query.equal('post_id', id)
+            Appwrite.Query.equal('post_id', id)
           ]);
 
           for(let doc of epRes.documents) {
