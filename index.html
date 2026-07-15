@@ -278,11 +278,11 @@
           id: doc.$id,
           name: doc.name,
           image_url: doc.image_url,
-          release_date: doc.release_date,
           genres: doc.genres,
           season: doc.season,
           short_story: doc.short_story,
-          category: doc.category
+          category: doc.category,
+          release_date: doc.release_date
         }));
 
         // Fetch settings
@@ -701,6 +701,7 @@
       renderPosts(filtered);
     }
 
+    // Filters Sections
     function toggleSidebar() {
       document.getElementById("sidebar").classList.toggle("open");
       document.getElementById("overlay").classList.toggle("show");
@@ -782,6 +783,7 @@
       document.getElementById("modal").classList.remove("active");
     }
 
+    // Direct A2Z View Setup
     function showAzListUI(type) {
       document.getElementById("gridTitle").innerHTML = `<i class="fas fa-list"></i> ${type} Directory`;
       const grid = document.getElementById("postsGrid");
@@ -792,4 +794,4 @@
     }
   </script>
 </body>
-</html>
+  </html>
