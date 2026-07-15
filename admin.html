@@ -66,10 +66,11 @@
     </div>
   </div>
 
+  <!-- Real-time Database Powered Single Password Login -->
   <div id="loginScreen">
     <div class="login-box">
       <h2>Anime Panel Login</h2>
-      <input type="password" id="adminPassInput" placeholder="Enter Admin Password">
+      <input type="password" id="adminPassInput" placeholder="Enter Secure Admin Password">
       <button onclick="attemptLogin()">Log In</button>
     </div>
   </div>
@@ -210,15 +211,15 @@
       <form id="settingsForm" onsubmit="submitSettings(event)" style="margin-bottom: 30px;">
         <div class="form-group">
           <label>Telegram Channel Link</label>
-          <input type="url" id="chanLink" class="form-control" required>
+          <input type="text" id="chanLink" class="form-control" placeholder="https://t.me/yourchannel">
         </div>
         <div class="form-group">
           <label>Telegram Group Link</label>
-          <input type="url" id="groupLink" class="form-control" required>
+          <input type="text" id="groupLink" class="form-control" placeholder="https://t.me/yourgroup">
         </div>
         <div class="form-group">
           <label>Global Player Private Password</label>
-          <input type="text" id="playerPass" class="form-control" required>
+          <input type="text" id="playerPass" class="form-control" placeholder="Set password for player">
         </div>
         
         <div class="form-group" style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
@@ -252,11 +253,11 @@
         </div>
         <div class="form-group">
           <label>Download Link (Shortener Routing)</label>
-          <input type="url" id="epLink" class="form-control" placeholder="https://download-url.com">
+          <input type="text" id="epLink" class="form-control" placeholder="https://download-url.com">
         </div>
         <div class="form-group">
           <label>Stream Play Embed URL</label>
-          <input type="url" id="epPlay" class="form-control" placeholder="https://stream-url.com/embed">
+          <input type="text" id="epPlay" class="form-control" placeholder="https://stream-url.com/embed">
         </div>
         
         <button type="submit" class="btn-submit" id="saveEpBtn">Save Episode</button>
@@ -342,7 +343,7 @@
     // Attempt login locally verified by database Settings value
     async function attemptLogin() {
       const enteredPass = document.getElementById("adminPassInput").value.trim();
-      if (!enteredPass) return alert("Enter password");
+      if (!enteredPass) return alert("Please enter password");
 
       const correctPass = databaseSettings['admin_password'];
       if (enteredPass === correctPass) {
@@ -606,20 +607,27 @@
       const label = document.getElementById("epLabel").value.trim();
       const link = document.getElementById("epLink").value.trim();
       const play = document.getElementById("epPlay").value.trim();
+      const quality = document.getElementById("epQuality").value.trim();
       
       if (!link && !play) {
-        return alert("At least one link is required to save an episode!");
+        return alert("At least one link (Download or Play) is required!");
       }
 
       showSpinner(true);
+
+      // Deep Search Fix: Create payload dynamically to completely omit empty strings
+      // This prevents Appwrite URL validators from failing on empty strings
+      const payload = {
+        post_id: postId,
+        episode_label: label
+      };
+
+      if (quality) payload.quality = quality;
+      if (link) payload.original_link = link;
+      if (play) payload.play_link = play;
+
       try {
-        await databases.createDocument(DB_ID, 'episodes', 'unique()', {
-          post_id: postId,
-          episode_label: label,
-          quality: document.getElementById("epQuality").value.trim(),
-          original_link: link,
-          play_link: play
-        });
+        await databases.createDocument(DB_ID, 'episodes', 'unique()', payload);
         alert("Episode successfully saved!");
 
         const post = loadedPosts.find(p => p.$id === postId);
@@ -629,7 +637,7 @@
         
         fetchModalEpisodes(postId);
       } catch (error) {
-        alert(error.message);
+        alert("Save failed: " + error.message);
       } finally {
         showSpinner(false);
       }
