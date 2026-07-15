@@ -67,7 +67,41 @@
     .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 999; display: none; }
     .overlay.show { display: block; }
 
-    .section-title { padding: 40px 30px 10px 30px; font-size: 26px; text-transform: uppercase; font-weight: 800; }
+    /* CAROUSEL SLIDER STYLE */
+    .slider-container { margin: 25px 30px 5px 30px; display: none; }
+    .slider-title { font-size: 18px; text-transform: uppercase; font-weight: 800; margin-bottom: 15px; color: #ffd700; }
+    .slider-wrapper { 
+      display: flex; 
+      gap: 20px; 
+      overflow-x: auto; 
+      scroll-behavior: smooth; 
+      padding-bottom: 10px;
+      scrollbar-width: none; 
+    }
+    .slider-wrapper::-webkit-scrollbar { display: none; }
+    .slider-card { 
+      flex: 0 0 240px; 
+      background: var(--card-bg); 
+      border-radius: 12px; 
+      overflow: hidden; 
+      position: relative; 
+      cursor: pointer; 
+      border: 1px solid var(--border); 
+      height: 140px;
+    }
+    .slider-card img { width: 100%; height: 100%; object-fit: cover; }
+    .slider-card .slider-fallback {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 15px; text-align: center;
+      background: linear-gradient(-45deg, #1e3a8a, #1e1b4b, #e50914);
+    }
+    .slider-card .slider-text { position: absolute; bottom: 0; left: 0; width: 100%; padding: 10px; background: rgba(0,0,0,0.75); font-size: 12px; font-weight: bold; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+
+    .filter-container { display: flex; gap: 10px; padding: 10px 30px; overflow-x: auto; scrollbar-width: none; }
+    .filter-container::-webkit-scrollbar { display: none; }
+    .filter-container button { background: rgba(30,30,35,0.6); border: 1px solid var(--border); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+    .filter-container button.active, .filter-container button:hover { background: var(--primary); border-color: var(--primary); }
+
+    .section-title { padding: 25px 30px 10px 30px; font-size: 26px; text-transform: uppercase; font-weight: 800; }
     .section-title span { color: var(--primary); }
     
     .posts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 25px; padding: 20px 30px; }
@@ -145,13 +179,14 @@
       .search-bar { order: 3; margin: 0; width: 100%; flex: 1 1 100%; }
       .posts-grid { grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 15px; padding: 15px; }
       .post-card img, .fallback-box { height: 190px; }
+      .slider-container { margin: 15px 15px 5px 15px; }
     }
   </style>
 </head>
 <body>
 
   <div class="header">
-    <span class="logo" onclick="showHome()">AnimeStudio</span>
+    <span class="logo" onclick="setHash('home')">AnimeStudio</span>
     <div class="search-bar">
       <input type="text" id="searchInput" placeholder="Search by name or genre..." oninput="searchPosts()">
       <i class="fa-solid fa-magnifying-glass"></i>
@@ -173,12 +208,27 @@
     <a href="#" id="tgGroup" target="_blank"><i class="fa-brands fa-telegram"></i> Telegram Group</a>
   </div>
 
+  <!-- TODAY'S FEATURED SLIDER -->
+  <div class="slider-container" id="featuredSliderBlock">
+    <h3 class="slider-title"><i class="fa-solid fa-star" style="color: #ffd700;"></i> Today's Featured</h3>
+    <div class="slider-wrapper" id="featuredSlider"></div>
+  </div>
+
+  <div class="filter-container" id="mainFilters">
+    <button onclick="setType('all', this)" class="active">All</button>
+    <button onclick="setType('anime sub', this)">Anime (Sub)</button>
+    <button onclick="setType('anime dub', this)">Anime (Dub)</button>
+    <button onclick="setType('k-drama', this)">K-Dramas</button>
+    <button onclick="setType('movie', this)">Movies</button>
+    <button onclick="setType('series', this)">Web Series</button>
+  </div>
+
   <div id="mainContent">
     <h2 class="section-title" id="gridTitle">All <span>Anime Series</span></h2>
     <div id="postsGrid" class="posts-grid"></div>
     
     <div id="detailPage" class="detail-page">
-      <button class="back-btn" onclick="showHome()"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <button class="back-btn" onclick="setHash('home')"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <div id="detailContent"></div>
     </div>
   </div>
@@ -204,11 +254,13 @@
 
     let allPosts = [];
     let settings = {};
+    let currentType = "all";
+    let currentSearch = "";
 
     document.addEventListener("DOMContentLoaded", loadApp);
 
     async function loadApp() {
-      // Setup guest session to allow secure reading of collections
+      // Connect guest session
       try {
         await account.get();
       } catch (e) {
@@ -221,12 +273,11 @@
 
       try {
         // Fetch posts
-        const postRes = await databases.listDocuments(DB_ID, 'posts');
+        const postRes = await databases.listDocuments(DB_ID, 'Posts');
         allPosts = postRes.documents.map(doc => ({
           id: doc.$id,
           name: doc.name,
           image_url: doc.image_url,
-          release_date: doc.release_date,
           genres: doc.genres,
           season: doc.season,
           short_story: doc.short_story,
@@ -234,17 +285,137 @@
         }));
 
         // Fetch settings
-        const settingsRes = await databases.listDocuments(DB_ID, 'settings');
+        const settingsRes = await databases.listDocuments(DB_ID, 'Settings');
         settingsRes.documents.forEach(doc => {
           settings[doc.key] = doc.value;
         });
         
         document.getElementById("tgChannel").href = settings.channel_link || "#";
         document.getElementById("tgGroup").href = settings.group_link || "#";
+        
         renderPosts(allPosts);
+        buildDailySlider(); // Auto build sliding carousel
+        setupHistoryRouter(); // Browser routing & back-button handler
+
       } catch(e) {
         console.error("Database initialization failed", e);
       }
+    }
+
+    // Dynamic Daily Seed Random Slider Carousel
+    function buildDailySlider() {
+      const slider = document.getElementById("featuredSlider");
+      const block = document.getElementById("featuredSliderBlock");
+      
+      if (allPosts.length === 0) {
+        block.style.display = "none";
+        return;
+      }
+
+      // Generate seed based on Calendar Date (Changes dynamically every 24 hours)
+      const dailyId = Math.floor(Date.now() / 86400000);
+      
+      // Shuffle posts based on seed
+      const seededShuffle = [...allPosts].sort((a, b) => {
+        const seedA = (a.id.charCodeAt(0) || 1) * dailyId;
+        const seedB = (b.id.charCodeAt(0) || 1) * dailyId;
+        return (seedA % 10) - (seedB % 10);
+      });
+
+      // Select top 5 featured posts
+      const featured = seededShuffle.slice(0, 5);
+
+      slider.innerHTML = featured.map(p => {
+        const media = (p.image_url && p.image_url.trim().startsWith("http")) 
+          ? `<img src="${p.image_url}" alt="${p.name}">` 
+          : `<div class="slider-fallback">${p.name}</div>`;
+        return `
+          <div class="slider-card" onclick="setHash('detail?id=${p.id}')">
+            ${media}
+            <div class="slider-text">${p.name}</div>
+          </div>
+        `;
+      }).join("");
+
+      block.style.display = "block";
+      startAutoSlider();
+    }
+
+    // Right-to-Left Auto sliding logic (Touch pause support)
+    let sliderInterval;
+    function startAutoSlider() {
+      const wrapper = document.getElementById("featuredSlider");
+      let scrollAmount = 0;
+      
+      const slide = () => {
+        if (wrapper.scrollLeft >= wrapper.scrollWidth - wrapper.clientWidth) {
+          wrapper.scrollLeft = 0;
+        } else {
+          wrapper.scrollLeft += 1;
+        }
+      };
+
+      sliderInterval = setInterval(slide, 25); // Smooth scrolling speed
+
+      // Pause scroll on hover or touch
+      wrapper.addEventListener("mouseenter", () => clearInterval(sliderInterval));
+      wrapper.addEventListener("mouseleave", () => sliderInterval = setInterval(slide, 25));
+      wrapper.addEventListener("touchstart", () => clearInterval(sliderInterval));
+      wrapper.addEventListener("touchend", () => sliderInterval = setInterval(slide, 25));
+    }
+
+    // HISTORY ROUTER / BACK BUTTON EXIT SITE FIX
+    function setupHistoryRouter() {
+      window.addEventListener("popstate", handleRouting);
+      // Set initial hash
+      if (!window.location.hash) {
+        window.location.hash = "home";
+      } else {
+        handleRouting();
+      }
+    }
+
+    function setHash(hashStr) {
+      window.location.hash = hashStr;
+    }
+
+    function handleRouting() {
+      const hash = window.location.hash.substring(1) || "home";
+      
+      // Hide all main elements initially
+      document.getElementById("postsGrid").style.display = "none";
+      document.getElementById("mainFilters").style.display = "none";
+      document.getElementById("featuredSliderBlock").style.display = "none";
+      document.getElementById("detailPage").classList.remove("active");
+      closeModal();
+
+      if (hash === "home") {
+        document.getElementById("postsGrid").style.display = "grid";
+        document.getElementById("mainFilters").style.display = "flex";
+        if(allPosts.length > 0) document.getElementById("featuredSliderBlock").style.display = "block";
+        document.getElementById("gridTitle").innerHTML = "All <span>Anime Series</span>";
+        applyFilter();
+      } else if (hash.startsWith("detail?id=")) {
+        const id = hash.split("id=")[1];
+        showDetailPage(id);
+      } else if (hash.startsWith("az?type=")) {
+        const type = decodeURIComponent(hash.split("type=")[1]);
+        showAzListUI(type);
+      }
+    }
+
+    function applyFilter() {
+      let filtered = allAnime.filter(a => {
+        const nameStr = (a.name || "").toLowerCase();
+        const typeStr = (a.category || "").toLowerCase();
+        const searchStr = currentSearch.toLowerCase();
+
+        const nameMatch = nameStr.includes(searchStr);
+        const typeMatch = currentType === "all" || typeStr === currentType;
+        
+        return nameMatch && typeMatch;
+      });
+      renderPosts(filtered);
     }
 
     function renderPosts(posts) {
@@ -263,7 +434,7 @@
              </div>`;
              
         return `
-          <div class="post-card" onclick="showDetail('${p.id}')">
+          <div class="post-card" onclick="setHash('detail?id=${p.id}')">
             ${mediaSection}
             <span class="category-tag">${p.category}</span>
             <div class="title-text">${p.name}</div>
@@ -272,12 +443,10 @@
       }).join("");
     }
 
-    async function showDetail(postId) {
+    async function showDetailPage(postId) {
       const post = allPosts.find(p => p.id === postId);
       if (!post) return;
       
-      document.getElementById("postsGrid").style.display = "none";
-      document.getElementById("gridTitle").style.display = "none";
       document.getElementById("detailPage").classList.add("active");
       
       const mediaSection = (post.image_url && post.image_url.trim().startsWith("http")) 
@@ -294,7 +463,6 @@
             <h2>${post.name}</h2>
             <p><strong>Category:</strong> ${post.category}</p>
             <p><strong>Genre:</strong> ${post.genres || "N/A"}</p>
-            <p><strong>Release:</strong> ${post.release_date || "N/A"}</p>
             <p><strong>Season:</strong> ${post.season || "N/A"}</p>
             <p><strong>Story:</strong> ${post.short_story || "N/A"}</p>
           </div>
@@ -308,7 +476,7 @@
       `;
 
       try {
-        const epRes = await databases.listDocuments(DB_ID, 'episodes', [
+        const epRes = await databases.listDocuments(DB_ID, 'Episodes', [
           Appwrite.Query.equal('post_id', postId)
         ]);
         const episodes = epRes.documents;
@@ -361,7 +529,7 @@
     async function solveShortener(epId) {
       showModal(`<h3>Shortening Link...</h3><p>Connecting with server routing, please wait...</p>`);
       try {
-        const ep = await databases.getDocument(DB_ID, 'episodes', epId);
+        const ep = await databases.getDocument(DB_ID, 'Episodes', epId);
         const originalLink = ep.original_link;
 
         if (!originalLink) {
@@ -370,7 +538,7 @@
           return;
         }
 
-        const shRes = await databases.listDocuments(DB_ID, 'shorteners');
+        const shRes = await databases.listDocuments(DB_ID, 'Shorteners');
         const shorteners = shRes.documents;
 
         if (shorteners.length === 0) {
@@ -436,7 +604,7 @@
       const actualPass = settings.player_password || "stream123";
 
       if(pass === actualPass) {
-        const ep = await databases.getDocument(DB_ID, 'episodes', epId);
+        const ep = await databases.getDocument(DB_ID, 'Episodes', epId);
         window.open(ep.play_link, "_blank");
         closeModal();
       } else {
@@ -460,7 +628,7 @@
       const pass = document.getElementById("premPass").value.trim();
       
       try {
-        const res = await databases.listDocuments(DB_ID, 'premiumusers', [
+        const res = await databases.listDocuments(DB_ID, 'PremiumUsers', [
           Appwrite.Query.equal('gmail', gmail),
           Appwrite.Query.equal('password', pass)
         ]);
@@ -471,7 +639,7 @@
           const expiry = new Date(user.expires_at);
 
           if (expiry > now) {
-            const ep = await databases.getDocument(DB_ID, 'episodes', epId);
+            const ep = await databases.getDocument(DB_ID, 'Episodes', epId);
             window.open(ep.original_link, "_blank");
             closeModal();
           } else {
@@ -499,7 +667,7 @@
     async function unlockPaidRequest() {
       const pass = document.getElementById("paidKeyInput").value.trim();
       try {
-        const res = await databases.listDocuments(DB_ID, 'paidrequests', [
+        const res = await databases.listDocuments(DB_ID, 'PaidRequests', [
           Appwrite.Query.equal('password', pass)
         ]);
 
@@ -515,10 +683,7 @@
     }
 
     function showHome() {
-      document.getElementById("postsGrid").style.display = "grid";
-      document.getElementById("gridTitle").style.display = "block";
-      document.getElementById("detailPage").classList.remove("active");
-      renderPosts(allPosts);
+      setHash('home');
     }
 
     function searchPosts() {
@@ -595,7 +760,7 @@
 
     function showAllPosts() {
       toggleSidebar();
-      showHome();
+      setHash('home');
     }
 
     function showModal(html) {
@@ -606,6 +771,16 @@
 
     function closeModal() {
       document.getElementById("modal").classList.remove("active");
+    }
+
+    // Direct A2Z View Setup
+    function showAzListUI(type) {
+      document.getElementById("gridTitle").innerHTML = `<i class="fas fa-list"></i> ${type} Directory`;
+      const grid = document.getElementById("postsGrid");
+      grid.style.display = "grid";
+      
+      const filtered = allPosts.filter(a => (a.category || "").toLowerCase() === type.toLowerCase());
+      renderPosts(filtered);
     }
   </script>
 </body>
