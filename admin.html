@@ -293,7 +293,7 @@
       document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
     }
 
-    // On Page Load: Safe anonymous session handle
+    // Guest session initializer
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         await account.get();
@@ -312,12 +312,25 @@
       
       showSpinner(true);
       try {
-        // Securely authenticate the session behind the scenes on Appwrite Auth using default admin email
-        await account.createEmailPasswordSession('admin@studio.com', enteredPass);
-        document.getElementById("loginScreen").style.display = "none";
-        refreshDashboard();
+        // Direct Query from Settings Database Collection
+        const res = await databases.listDocuments(DB_ID, 'Settings', [
+          Appwrite.Query.equal('key', 'admin_password')
+        ]);
+
+        let actualPassword = "12345asif"; 
+        if(res.documents.length > 0) {
+          currentAdminPasswordDoc = res.documents[0];
+          actualPassword = currentAdminPasswordDoc.value;
+        }
+
+        if(enteredPass === actualPassword) {
+          document.getElementById("loginScreen").style.display = "none";
+          refreshDashboard();
+        } else {
+          alert("Wrong Password!");
+        }
       } catch (err) {
-        alert("Wrong Admin Password!");
+        alert("Database connection failed: " + err.message + "\n\nTip: Settings Table Permissions checking verify karein.");
       } finally {
         showSpinner(false);
       }
@@ -326,14 +339,24 @@
     async function changeAdminPassword(e) {
       e.preventDefault();
       const newPass = document.getElementById("newAdminPass").value.trim();
-      if(!newPass) return alert("Please type a new password.");
       
       showSpinner(true);
       try {
-        // Update Appwrite Auth Account Password directly so it remains 100% secure
-        await account.updatePassword(newPass);
-        alert("Password updated successfully! Please login with your new password.");
-        await account.deleteSession('current');
+        if (!newPass) {
+          if (currentAdminPasswordDoc) {
+            await databases.deleteDocument(DB_ID, 'Settings', currentAdminPasswordDoc.$id);
+            alert("Custom password deleted! Reverted back to default (12345asif). Logging out.");
+          } else {
+            alert("Already on default password (12345asif).");
+          }
+        } else {
+          if (currentAdminPasswordDoc) {
+            await databases.updateDocument(DB_ID, 'Settings', currentAdminPasswordDoc.$id, { value: newPass });
+          } else {
+            await databases.createDocument(DB_ID, 'Settings', 'unique()', { key: 'admin_password', value: newPass });
+          }
+          alert("Password updated successfully! Logging out.");
+        }
         location.reload();
       } catch(err) {
         alert("Failed to update password: " + err.message);
@@ -357,6 +380,9 @@
         setRes.documents.forEach(doc => {
           settings[doc.key] = doc.value;
         });
+
+        const pwDoc = setRes.documents.find(d => d.key === 'admin_password');
+        if (pwDoc) currentAdminPasswordDoc = pwDoc;
 
         renderDashboard(loadedPosts, shRes.documents, premRes.documents, paidRes.documents, settings);
       } catch(err) {
@@ -794,4 +820,4 @@
     function closeModal() { document.getElementById("modal").style.display = "none"; }
   </script>
 </body>
-</html>
+  </html>
