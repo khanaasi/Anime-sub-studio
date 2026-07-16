@@ -145,6 +145,11 @@
     <!-- 2. SELECT POST (MANAGE EPISODES) -->
     <div id="selectPostSec" class="section-card">
       <h3>Manage Episodes</h3>
+      <!-- Dynamic Search Bar for Fast Filtering -->
+      <div class="form-group" style="margin-bottom: 15px; position:relative;">
+        <input type="text" id="episodeSearchInput" class="form-control" placeholder="🔍 Search Anime Series by Name..." oninput="filterEpisodeSelectionList()" style="padding-left:35px;">
+        <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:15px; color:#777;"></i>
+      </div>
       <div class="scroll-list" id="selectionList"></div>
     </div>
 
@@ -231,7 +236,7 @@
         <div class="form-group" style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
           <label style="color: #ffd700; font-weight: bold;"><i class="fa-solid fa-key"></i> Admin Panel Access Password</label>
           <input type="text" id="adminPanelPass" class="form-control" placeholder="Set password to lock this admin panel (Leave blank to keep it unlocked)">
-          <small style="color: #777;">नोट: यदि आप इसे खाली छोड़ते हैं, तो पासवर्ड लॉक हट जाएगा और पैनल सीधे खुलेगा।</small>
+          <small style="color: #777;">नोट: यदि आप इसे खाली छोड़ते हैं, तो password लॉक हट जाएगा और पैनल सीधे खुलेगा।</small>
         </div>
         
         <button type="submit" class="btn-submit">Save Settings</button>
@@ -253,9 +258,14 @@
           <label>Episode Number / Label (e.g. 01, ova 01, chapter 01, 01-06)</label>
           <input type="text" id="epLabel" class="form-control" placeholder="01" required>
         </div>
+        <!-- FIXED Option Quality select dropdown replace -->
         <div class="form-group">
-          <label>Quality (e.g. 1080p, 720p)</label>
-          <input type="text" id="epQuality" class="form-control" placeholder="1080p">
+          <label>Quality</label>
+          <select id="epQuality" class="form-control">
+            <option value="SD (480p)">SD (480p)</option>
+            <option value="HD (720p)" selected>HD (720p)</option>
+            <option value="FHD (1080p)">FHD (1080p)</option>
+          </select>
         </div>
         <div class="form-group">
           <label>Download Link (Shortener Routing)</label>
@@ -280,7 +290,6 @@
   </div>
 
   <script>
-    // Sanity Config
     const SANITY_PROJECT_ID = 'vb4q5oda'; 
     const SANITY_DATASET = 'production';
     const SANITY_WRITE_TOKEN = 'skT864LQEmM7nmf3Z2WnyyIA4FVJd2wkM1Sd0cBoBk0HO4Z71eDhqTmUmzZvUbyojybLUzWRgZQDoH9dcdF5ERrEJ9lrbcLk8QlM4w8MzDMTp5VEMhmZyhCzs9mhfIGXfzxfTNAsNwvLO1q7XOnW3MRawML4jOMFBhdwmsAxssSdTzF8g8dl'; 
@@ -386,8 +395,9 @@
       }
     }
 
+    // FIXED Added ?visibility=sync to force immediate background document indexing!
     async function sanityMutate(mutations) {
-      const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/mutate/${SANITY_DATASET}`;
+      const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/mutate/${SANITY_DATASET}?visibility=sync`;
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -406,7 +416,6 @@
     async function refreshDashboard() {
       showSpinner(true);
       try {
-        // Safe Flat GROQ Query to bypass nested projection parsing errors
         const query = encodeURIComponent(`*[_type in ["post", "shortener", "premiumuser", "paidrequest", "setting"]]`);
         const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
         
@@ -486,78 +495,23 @@
       document.getElementById("groupLink").value = settings.group_link || "";
       document.getElementById("playerPass").value = settings.player_password || "";
       document.getElementById("adminPanelPass").value = settings.admin_password || "";
+      
+      // Auto-retrigger filter if term exists
+      filterEpisodeSelectionList();
     }
 
-    function handleAutoDetect() {
-      const text = document.getElementById("autoDetectInput").value.trim();
-      if (!text) return;
-
-      const keys = {
-        name: ["name", "title", "naam"],
-        category: ["category", "cat"],
-        release_date: ["date", "release", "release_date", "release-date"],
-        genres: ["genre", "genres", "category_genres"],
-        season: ["season", "season_number", "season-number"],
-        short_story: ["shortstory", "story", "short_story", "short-story", "description", "desc"]
-      };
-
-      const allAliases = [];
-      for (let k in keys) {
-        allAliases.push(...keys[k]);
-      }
-      
-      const escapedAliases = allAliases.map(a => a.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')).join('|');
-      const keyRegex = new RegExp(`(?:^|\\n)\\s*(${escapedAliases})\\s*[:\\-=]+\\s*`, 'gi');
-
-      let matches = [];
-      let match;
-      while ((match = keyRegex.exec(text)) !== null) {
-        matches.push({
-          keyName: match[1].toLowerCase().trim(),
-          startIndex: match.index,
-          fullLength: match[0].length
-        });
-      }
-
-      matches.sort((a, b) => a.startIndex - b.startIndex);
-
-      let parsedData = {};
-
-      for (let i = 0; i < matches.length; i++) {
-        const current = matches[i];
-        const start = current.startIndex + current.fullLength;
-        const end = (i + 1 < matches.length) ? matches[i + 1].startIndex : text.length;
-        let value = text.substring(start, end).trim();
-
-        let mainField = null;
-        for (let k in keys) {
-          if (keys[k].includes(current.keyName)) {
-            mainField = k;
-            break;
-          }
+    // Dynamic Episode Search Filter Function
+    function filterEpisodeSelectionList() {
+      const term = document.getElementById("episodeSearchInput").value.trim().toLowerCase();
+      const listItems = document.querySelectorAll("#selectionList .list-item");
+      listItems.forEach(item => {
+        const name = item.querySelector("span").innerText.toLowerCase();
+        if (name.includes(term)) {
+          item.style.display = "flex";
+        } else {
+          item.style.display = "none";
         }
-
-        if (mainField) {
-          parsedData[mainField] = value;
-        }
-      }
-
-      if (Object.keys(parsedData).length === 0) {
-        const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-        if (lines.length >= 1) parsedData.name = lines[0];
-        if (lines.length >= 2) parsedData.genres = lines[1];
-        if (lines.length >= 3) parsedData.short_story = lines[2];
-        if (lines.length >= 4) parsedData.release_date = lines[3];
-        if (lines.length >= 5) parsedData.category = lines[4];
-        if (lines.length >= 6) parsedData.season = lines[5];
-      }
-
-      if (parsedData.name) document.getElementById("postName").value = parsedData.name;
-      if (parsedData.category) document.getElementById("postCategory").value = parsedData.category;
-      if (parsedData.genres) document.getElementById("postGenre").value = parsedData.genres;
-      if (parsedData.season) document.getElementById("postSeason").value = parsedData.season;
-      if (parsedData.short_story) document.getElementById("postStory").value = parsedData.short_story;
-      if (parsedData.release_date) document.getElementById("postRelease").value = parsedData.release_date;
+      });
     }
 
     async function openEpisodeModal(postId) {
@@ -568,7 +522,7 @@
       document.getElementById("modalPostName").innerText = post.name;
       
       document.getElementById("epLabel").value = "";
-      document.getElementById("epQuality").value = "1080p";
+      document.getElementById("epQuality").value = "HD (720p)";
       document.getElementById("epLink").value = "";
       document.getElementById("epPlay").value = "";
       
@@ -655,7 +609,7 @@
       const label = document.getElementById("epLabel").value.trim();
       const link = document.getElementById("epLink").value.trim();
       const play = document.getElementById("epPlay").value.trim();
-      const quality = document.getElementById("epQuality").value.trim();
+      const quality = document.getElementById("epQuality").value;
       
       if (!link && !play) {
         return alert("At least one link (Download or Play) is required!");
@@ -675,7 +629,7 @@
       };
 
       try {
-        // FIXED System Field Restriction by targeting custom attributes for touching parent
+        // Safe document touch via custom 'last_updated' field
         await sanityMutate([
           { createOrReplace: payload },
           { patch: { id: postId, set: { last_updated: new Date().toISOString() } } }
@@ -771,7 +725,6 @@
       showSpinner(true);
       try {
         const gmailClean = document.getElementById("premUser").value.trim().toLowerCase();
-        // FIXED ID generation format to be alphanumeric safe for Sanity
         const id = 'premium-' + Date.now();
         await sanityMutate([{
           createOrReplace: {
