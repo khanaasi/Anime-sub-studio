@@ -16,9 +16,11 @@
     .login-box input { width: 100%; padding: 14px; margin-bottom: 20px; background: #1c1c21; border: 1px solid var(--border); color: white; border-radius: 8px; text-align: center; font-size: 16px; }
     .login-box button { background: var(--primary); color: white; width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-    .header { background: var(--panel); padding: 15px 25px; display: flex; align-items: center; border-bottom: 1px solid var(--border); }
+    .header { background: var(--panel); padding: 15px 25px; display: flex; align-items: center; border-bottom: 1px solid var(--border); justify-content: space-between; }
+    .header-left { display: flex; align-items: center; }
     .menu-toggle { font-size: 24px; cursor: pointer; margin-right: 20px; color: var(--primary); }
     .site-name { font-size: 20px; font-weight: bold; }
+    #sessionStatus { font-size: 13px; font-weight: bold; background: #1a1a1f; padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); }
 
     .sidebar { position: fixed; left: -280px; top: 0; height: 100%; width: 280px; background: var(--panel); z-index: 999; transition: 0.3s; padding-top: 80px; border-right: 1px solid var(--border); }
     .sidebar.open { left: 0; }
@@ -76,8 +78,12 @@
   </div>
 
   <div class="header">
-    <span class="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></span>
-    <span class="site-name">Anime DB Admin Portal</span>
+    <div class="header-left">
+      <span class="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></span>
+      <span class="site-name">Anime DB Admin Portal</span>
+    </div>
+    <!-- Interactive Session Status Indicator -->
+    <span id="sessionStatus"><i class="fa-solid fa-circle-nodes"></i> Checking Session...</span>
   </div>
 
   <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
@@ -299,12 +305,16 @@
 
     async function initGuestSessionAndVerifyLock() {
       showSpinner(true);
+      const statusEl = document.getElementById("sessionStatus");
       try {
         // Start secure anonymous write session
+        let user;
         try {
-          await account.get();
+          user = await account.get();
+          statusEl.innerHTML = `<i class="fa-solid fa-user-shield" style="color:#00b359;"></i> Session Connected`;
         } catch(err) {
-          await account.createAnonymousSession();
+          user = await account.createAnonymousSession();
+          statusEl.innerHTML = `<i class="fa-solid fa-user" style="color:#ffd700;"></i> Guest Session Active`;
         }
 
         // Fetch settings from lowercase settings collection
@@ -332,7 +342,7 @@
         }
       } catch(e) {
         console.error("Authentication init failed", e);
-        // Fallback open if configuration completely missing
+        statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#e50914;"></i> Database Offline`;
         document.getElementById("loginScreen").style.display = "none";
         refreshDashboard();
       } finally {
