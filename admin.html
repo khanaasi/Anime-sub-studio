@@ -567,6 +567,13 @@
         try {
           await databases.deleteDocument(DB_ID, 'episodes', epId);
           alert("Episode deleted!");
+          
+          // Force touch on parent post when episode gets deleted as well to synchronize state
+          const parentPost = loadedPosts.find(p => p.$id === postId);
+          if (parentPost) {
+            await databases.updateDocument(DB_ID, 'posts', postId, { name: parentPost.name });
+          }
+          
           fetchModalEpisodes(postId);
         } catch(e) {
           alert("Delete failed.");
@@ -625,8 +632,6 @@
 
       showSpinner(true);
 
-      // Deep Search Fix: Create payload dynamically to completely omit empty strings
-      // This prevents Appwrite URL validators from failing on empty strings
       const payload = {
         post_id: postId,
         episode_label: label
@@ -638,6 +643,15 @@
 
       try {
         await databases.createDocument(DB_ID, 'episodes', 'unique()', payload);
+        
+        // Touch parent post to update its modification timestamp so it floats to the top of homepage
+        const parentPost = loadedPosts.find(p => p.$id === postId);
+        if (parentPost) {
+          await databases.updateDocument(DB_ID, 'posts', postId, {
+            name: parentPost.name // Simple touch triggers Appwrite's $updatedAt refresh
+          });
+        }
+
         alert("Episode successfully saved!");
 
         const post = loadedPosts.find(p => p.$id === postId);
