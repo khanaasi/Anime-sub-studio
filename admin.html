@@ -1,3 +1,4 @@
+--- START OF FILE Anime-sub-studio-main/admin.html ---
 <!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -68,7 +69,6 @@
     </div>
   </div>
 
-  <!-- Real-time Database Powered Single Password Login -->
   <div id="loginScreen">
     <div class="login-box">
       <h2>Anime Panel Login</h2>
@@ -82,7 +82,6 @@
       <span class="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></span>
       <span class="site-name">Anime DB Admin Portal</span>
     </div>
-    <!-- Interactive Session Status Indicator -->
     <span id="sessionStatus"><i class="fa-solid fa-circle-nodes"></i> Checking Session...</span>
   </div>
 
@@ -110,9 +109,10 @@
 
       <form id="addPostForm" onsubmit="submitPost(event)">
         <div class="form-group">
-          <label>Poster Image URL (Optional)</label>
-          <input type="text" id="postImage" class="form-control" placeholder="https://domain.com/image.jpg">
-          <a href="https://postimages.org" target="_blank" class="btn-helper"><i class="fa-solid fa-upload"></i> Upload Image</a>
+          <label>Poster Image (Upload Image to Sanity Storage)</label>
+          <input type="file" id="postImageFile" class="form-control" accept="image/*" onchange="uploadImageToSanity()" style="margin-bottom: 10px;">
+          <input type="text" id="postImage" class="form-control" placeholder="OR Paste external image URL (Optional)">
+          <small id="uploadStatus" style="color: #00b359; display: none;"></small>
         </div>
         <div class="form-group">
           <label>Anime Name</label>
@@ -280,58 +280,44 @@
     </div>
   </div>
 
-  <!-- Appwrite SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.1"></script>
   <script>
-    // Appwrite Initialization
-    let client, databases, account, Query;
-    const DB_ID = '6a562f8a001c9d95454a';
+    // Sanity Config
+    const SANITY_PROJECT_ID = 'vb4q5oda'; 
+    const SANITY_DATASET = 'production';
+    const SANITY_WRITE_TOKEN = 'skT864LQEmM7nmf3Z2WnyyIA4FVJd2wkM1Sd0cBoBk0HO4Z71eDhqTmUmzZvUbyojybLUzWRgZQDoH9dcdF5ERrEJ9lrbcLk8QlM4w8MzDMTp5VEMhmZyhCzs9mhfIGXfzxfTNAsNwvLO1q7XOnW3MRawML4jOMFBhdwmsAxssSdTzF8g8dl'; 
+
     let loadedPosts = [];
     let databaseSettings = {};
 
     window.onload = function() {
-      const { Client, Databases, Account, Query: AppwriteQuery } = Appwrite;
-      
-      client = new Client()
-        .setEndpoint('https://fra.cloud.appwrite.io/v1')
-        .setProject('6a562e7f0030aa778863');
-
-      databases = new Databases(client);
-      account = new Account(client);
-      Query = AppwriteQuery;
-
-      initGuestSessionAndVerifyLock();
+      initSessionAndVerifyLock();
     };
 
-    async function initGuestSessionAndVerifyLock() {
+    async function initSessionAndVerifyLock() {
       showSpinner(true);
       const statusEl = document.getElementById("sessionStatus");
       try {
-        // Start secure anonymous write session
-        let user;
-        try {
-          user = await account.get();
-          statusEl.innerHTML = `<i class="fa-solid fa-user-shield" style="color:#00b359;"></i> Session Connected`;
-        } catch(err) {
-          user = await account.createAnonymousSession();
-          statusEl.innerHTML = `<i class="fa-solid fa-user" style="color:#ffd700;"></i> Guest Session Active`;
+        const query = encodeURIComponent(`*[_type == "setting"]`);
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        
+        const response = await fetch(url);
+        const resData = await response.json();
+        
+        databaseSettings = {};
+        if (resData.result) {
+          resData.result.forEach(doc => {
+            databaseSettings[doc.key] = doc.value;
+          });
         }
 
-        // Fetch settings from lowercase settings collection
-        const setRes = await databases.listDocuments(DB_ID, 'settings');
-        databaseSettings = {};
-        setRes.documents.forEach(doc => {
-          databaseSettings[doc.key] = doc.value;
-        });
+        statusEl.innerHTML = `<i class="fa-solid fa-user-shield" style="color:#00b359;"></i> Sanity Connected`;
 
         const savedPassword = databaseSettings['admin_password'];
 
         if (!savedPassword || savedPassword.trim() === "") {
-          // No password set -> Fully bypass login (Unlocks panel directly)
           document.getElementById("loginScreen").style.display = "none";
           refreshDashboard();
         } else {
-          // Verify with local session storage
           const activeSession = localStorage.getItem("admin_authenticated_session");
           if (activeSession === savedPassword) {
             document.getElementById("loginScreen").style.display = "none";
@@ -341,16 +327,13 @@
           }
         }
       } catch(e) {
-        console.error("Authentication init failed", e);
+        console.error("Sanity connection failed", e);
         statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#e50914;"></i> Database Offline`;
-        document.getElementById("loginScreen").style.display = "none";
-        refreshDashboard();
       } finally {
         showSpinner(false);
       }
     }
 
-    // Attempt login locally verified by database Settings value
     async function attemptLogin() {
       const enteredPass = document.getElementById("adminPassInput").value.trim();
       if (!enteredPass) return alert("Please enter password");
@@ -369,24 +352,78 @@
       document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
     }
 
+    // Direct Sanity Image Uploader
+    async function uploadImageToSanity() {
+      const fileInput = document.getElementById("postImageFile");
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const statusEl = document.getElementById("uploadStatus");
+      statusEl.style.display = "block";
+      statusEl.style.color = "#ffd700";
+      statusEl.innerText = "⏳ Poster uploading to Sanity Cloud...";
+
+      try {
+        const uploadUrl = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/assets/images/${SANITY_DATASET}`;
+        const response = await fetch(uploadUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${SANITY_WRITE_TOKEN}`,
+            "Content-Type": file.type
+          },
+          body: file
+        });
+        const resData = await response.json();
+        if (resData.document && resData.document.url) {
+          document.getElementById("postImage").value = resData.document.url;
+          statusEl.style.color = "#00b359";
+          statusEl.innerText = "✅ Poster successfully uploaded & saved to Cloud!";
+        } else {
+          throw new Error("Invalid response");
+        }
+      } catch (err) {
+        console.error(err);
+        statusEl.style.color = "#e50914";
+        statusEl.innerText = "❌ Image Upload Failed! (Check API Keys)";
+      }
+    }
+
+    async function sanityMutate(mutations) {
+      const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/mutate/${SANITY_DATASET}`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SANITY_WRITE_TOKEN}`
+        },
+        body: JSON.stringify({ mutations })
+      });
+      return await response.json();
+    }
+
     async function refreshDashboard() {
       showSpinner(true);
       try {
-        // Fetch all data from strictly lowercase collections
-        const postRes = await databases.listDocuments(DB_ID, 'posts');
-        loadedPosts = postRes.documents;
-
-        const shRes = await databases.listDocuments(DB_ID, 'shorteners');
-        const premRes = await databases.listDocuments(DB_ID, 'premiumusers');
-        const paidRes = await databases.listDocuments(DB_ID, 'paidrequests');
-        const setRes = await databases.listDocuments(DB_ID, 'settings');
+        const query = encodeURIComponent(`{
+          "posts": *[_type == "post"] | order(_updatedAt desc),
+          "shorteners": *[_type == "shortener"],
+          "premium": *[_type == "premiumuser"],
+          "paid": *[_type == "paidrequest"],
+          "settings": *[_type == "setting"]
+        }`);
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
         
+        const response = await fetch(url);
+        const resData = await response.json();
+        const data = resData.result;
+
+        loadedPosts = data.posts;
         databaseSettings = {};
-        setRes.documents.forEach(doc => {
+        data.settings.forEach(doc => {
           databaseSettings[doc.key] = doc.value;
         });
 
-        renderDashboard(loadedPosts, shRes.documents, premRes.documents, paidRes.documents, databaseSettings);
+        renderDashboard(data.posts, data.shorteners, data.premium, data.paid, databaseSettings);
       } catch(err) {
         console.error("Dashboard Sync Failed", err);
       } finally {
@@ -398,14 +435,14 @@
       document.getElementById("selectionList").innerHTML = posts.map(post => `
         <div class="list-item">
           <span>${post.name}</span>
-          <button class="delete-btn" style="background:#0066cc;" onclick="openEpisodeModal('${post.$id}')">Manage Ep</button>
+          <button class="delete-btn" style="background:#0066cc;" onclick="openEpisodeModal('${post._id}')">Manage Ep</button>
         </div>
       `).join("");
 
       document.getElementById("deletionList").innerHTML = posts.map(post => `
         <div class="list-item">
           <span>${post.name}</span>
-          <button class="delete-btn" onclick="deleteFullPost('${post.$id}')">Delete Post</button>
+          <button class="delete-btn" onclick="deleteFullPost('${post._id}')">Delete Post</button>
         </div>
       `).join("");
 
@@ -413,7 +450,7 @@
       shList.innerHTML = shorteners.length ? shorteners.map(sh => `
         <div class="list-item">
           <div><strong>${sh.dashboard_url}</strong></div>
-          <button class="delete-btn" onclick="deleteShortener('${sh.$id}')">Delete</button>
+          <button class="delete-btn" onclick="deleteShortener('${sh._id}')">Delete</button>
         </div>
       `).join("") : "<div style='padding:15px; color:#555;'>No shorteners found.</div>";
 
@@ -426,7 +463,7 @@
               <strong>${u.gmail}</strong><br>
               <small style="color:#777;">Pass: ${u.password} | Exp: ${expDate}</small>
             </div>
-            <button class="delete-btn" onclick="deletePremium('${u.$id}')">Delete</button>
+            <button class="delete-btn" onclick="deletePremium('${u._id}')">Delete</button>
           </div>
         `;
       }).join("") : "<div style='padding:15px; color:#555;'>No Premium users found.</div>";
@@ -438,7 +475,7 @@
             <strong>Code: ${req.password}</strong><br>
             <small style="color:#777;">Target: ${req.original_link}</small>
           </div>
-          <button class="delete-btn" onclick="deletePaidRequest('${req.$id}')">Delete</button>
+          <button class="delete-btn" onclick="deletePaidRequest('${req._id}')">Delete</button>
         </div>
       `).join("") : "<div style='padding:15px; color:#555;'>No locked links found.</div>";
 
@@ -521,7 +558,7 @@
     }
 
     async function openEpisodeModal(postId) {
-      const post = loadedPosts.find(p => p.$id === postId);
+      const post = loadedPosts.find(p => p._id === postId);
       if (!post) return alert("Error finding selected post!");
 
       document.getElementById("modalPostId").value = postId;
@@ -542,17 +579,19 @@
       const container = document.getElementById("modalEpisodesContainer");
       container.innerHTML = "<p style='color:#777;text-align:center;'>Loading...</p>";
       try {
-        const epRes = await databases.listDocuments(DB_ID, 'episodes', [
-          Query.equal('post_id', postId)
-        ]);
-        const episodes = epRes.documents;
+        const query = encodeURIComponent(`*[_type == "episode" && post_id == "${postId}"]`);
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const response = await fetch(url);
+        const resData = await response.json();
+        const episodes = resData.result;
+
         if(episodes.length === 0) {
           container.innerHTML = "<p style='color:#777;text-align:center;padding:10px;'>No episodes added yet.</p>";
         } else {
           container.innerHTML = episodes.map(ep => `
             <div class="list-item" style="padding: 10px 15px; margin-bottom: 5px;">
               <span>Episode ${ep.episode_label} [${ep.quality || "N/A"}]</span>
-              <button class="delete-btn" style="background:#7c040a;" onclick="deleteEpisode('${ep.$id}', '${postId}')">Delete</button>
+              <button class="delete-btn" style="background:#7c040a;" onclick="deleteEpisode('${ep._id}', '${postId}')">Delete</button>
             </div>
           `).join("");
         }
@@ -565,15 +604,8 @@
       if(confirm("Are you sure you want to delete this episode?")) {
         showSpinner(true);
         try {
-          await databases.deleteDocument(DB_ID, 'episodes', epId);
+          await sanityMutate([{ delete: { id: epId } }]);
           alert("Episode deleted!");
-          
-          // Force touch on parent post when episode gets deleted as well to synchronize state
-          const parentPost = loadedPosts.find(p => p.$id === postId);
-          if (parentPost) {
-            await databases.updateDocument(DB_ID, 'posts', postId, { name: parentPost.name });
-          }
-          
           fetchModalEpisodes(postId);
         } catch(e) {
           alert("Delete failed.");
@@ -587,32 +619,28 @@
       e.preventDefault();
       showSpinner(true);
       try {
+        const id = 'post-' + Date.now();
         const payload = {
+          _id: id,
+          _type: "post",
           name: document.getElementById("postName").value.trim(),
           image_url: document.getElementById("postImage").value.trim(),
           genres: document.getElementById("postGenre").value.trim(),
           season: document.getElementById("postSeason").value.trim(),
           short_story: document.getElementById("postStory").value.trim(),
-          category: document.getElementById("postCategory").value.trim()
+          category: document.getElementById("postCategory").value.trim(),
+          release_date: document.getElementById("postRelease").value.trim()
         };
 
-        const testRes = await databases.listDocuments(DB_ID, 'posts', [Query.limit(1)]);
-        if (testRes.documents.length > 0) {
-          const docKeys = Object.keys(testRes.documents[0]).filter(k => !k.startsWith('$'));
-          if (docKeys.includes('release_date')) {
-            payload.release_date = document.getElementById("postRelease").value.trim();
-          }
-        } else {
-          payload.release_date = document.getElementById("postRelease").value.trim();
-        }
-
-        await databases.createDocument(DB_ID, 'posts', 'unique()', payload);
+        await sanityMutate([{ createOrReplace: payload }]);
+        
         alert("Post successfully created!");
         document.getElementById("addPostForm").reset();
         document.getElementById("autoDetectInput").value = "";
+        document.getElementById("uploadStatus").style.display = "none";
         refreshDashboard();
       } catch (error) {
-        alert(error.message);
+        alert("Save failed: " + error.message);
       } finally {
         showSpinner(false);
       }
@@ -632,29 +660,26 @@
 
       showSpinner(true);
 
+      const epId = 'episode-' + Date.now();
       const payload = {
+        _id: epId,
+        _type: "episode",
         post_id: postId,
-        episode_label: label
+        episode_label: label,
+        quality: quality,
+        original_link: link,
+        play_link: play
       };
 
-      if (quality) payload.quality = quality;
-      if (link) payload.original_link = link;
-      if (play) payload.play_link = play;
-
       try {
-        await databases.createDocument(DB_ID, 'episodes', 'unique()', payload);
-        
-        // Touch parent post to update its modification timestamp so it floats to the top of homepage
-        const parentPost = loadedPosts.find(p => p.$id === postId);
-        if (parentPost) {
-          await databases.updateDocument(DB_ID, 'posts', postId, {
-            name: parentPost.name // Simple touch triggers Appwrite's $updatedAt refresh
-          });
-        }
+        await sanityMutate([
+          { createOrReplace: payload },
+          { patch: { id: postId, set: { _updatedAt: new Date().toISOString() } } } // Touch logic
+        ]);
 
         alert("Episode successfully saved!");
 
-        const post = loadedPosts.find(p => p.$id === postId);
+        const post = loadedPosts.find(p => p._id === postId);
         const tweetText = encodeURIComponent(`🔥 New Update Added!\n\nAnime: ${post.name}\nEpisode: ${label}\nWatch/Download Now! ⚡`);
         document.getElementById("twitterShareBtn").href = `https://twitter.com/intent/tweet?text=${tweetText}`;
         document.getElementById("twitterShareBlock").style.display = "block";
@@ -671,15 +696,18 @@
       if (confirm("Are you sure you want to delete this anime and all associated episodes?")) {
         showSpinner(true);
         try {
-          const epRes = await databases.listDocuments(DB_ID, 'episodes', [
-            Query.equal('post_id', id)
-          ]);
+          const query = encodeURIComponent(`*[_type == "episode" && post_id == "${id}"]`);
+          const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+          const response = await fetch(url);
+          const resData = await response.json();
+          const episodes = resData.result;
 
-          for(let doc of epRes.documents) {
-            await databases.deleteDocument(DB_ID, 'episodes', doc.$id);
-          }
+          const mutations = [{ delete: { id } }];
+          episodes.forEach(ep => {
+            mutations.push({ delete: { id: ep._id } });
+          });
 
-          await databases.deleteDocument(DB_ID, 'posts', id);
+          await sanityMutate(mutations);
           alert("Successfully removed.");
           refreshDashboard();
         } catch(e) {
@@ -698,10 +726,15 @@
 
       showSpinner(true);
       try {
-        await databases.createDocument(DB_ID, 'shorteners', 'unique()', {
-          dashboard_url: cleanUrl,
-          api_key: document.getElementById("apiKey").value.trim()
-        });
+        const id = 'shortener-' + Date.now();
+        await sanityMutate([{
+          createOrReplace: {
+            _id: id,
+            _type: "shortener",
+            dashboard_url: cleanUrl,
+            api_key: document.getElementById("apiKey").value.trim()
+          }
+        }]);
         alert("Shortener added successfully.");
         document.getElementById("shortenerForm").reset();
         refreshDashboard();
@@ -716,7 +749,7 @@
       if (confirm("Remove this shortener?")) {
         showSpinner(true);
         try {
-          await databases.deleteDocument(DB_ID, 'shorteners', id);
+          await sanityMutate([{ delete: { id } }]);
           refreshDashboard();
         } catch(e) {
           alert("Error deleting.");
@@ -729,16 +762,22 @@
     async function submitPremium(e) {
       e.preventDefault();
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 28); // exactly 28 days valid
+      expiresAt.setDate(expiresAt.getDate() + 28);
 
       showSpinner(true);
       try {
-        await databases.createDocument(DB_ID, 'premiumusers', 'unique()', {
-          gmail: document.getElementById("premUser").value.trim().toLowerCase(),
-          password: document.getElementById("premPass").value.trim(),
-          expires_at: expiresAt.toISOString(),
-          active_session: "" // Initialized empty so double-login blocking is secure
-        });
+        const gmailClean = document.getElementById("premUser").value.trim().toLowerCase();
+        const id = 'premium-' + btoa(gmailClean).replace(/=/g, "");
+        await sanityMutate([{
+          createOrReplace: {
+            _id: id,
+            _type: "premiumuser",
+            gmail: gmailClean,
+            password: document.getElementById("premPass").value.trim(),
+            expires_at: expiresAt.toISOString(),
+            active_session: ""
+          }
+        }]);
         alert("Premium registration added successfully.");
         document.getElementById("premiumForm").reset();
         refreshDashboard();
@@ -753,7 +792,7 @@
       if (confirm("Delete this user?")) {
         showSpinner(true);
         try {
-          await databases.deleteDocument(DB_ID, 'premiumusers', id);
+          await sanityMutate([{ delete: { id } }]);
           refreshDashboard();
         } catch(e) {
           alert("Delete failed.");
@@ -767,10 +806,15 @@
       e.preventDefault();
       showSpinner(true);
       try {
-        await databases.createDocument(DB_ID, 'paidrequests', 'unique()', {
-          password: document.getElementById("paidPass").value.trim(),
-          original_link: document.getElementById("paidUrl").value.trim()
-        });
+        const id = 'paid-' + Date.now();
+        await sanityMutate([{
+          createOrReplace: {
+            _id: id,
+            _type: "paidrequest",
+            password: document.getElementById("paidPass").value.trim(),
+            original_link: document.getElementById("paidUrl").value.trim()
+          }
+        }]);
         alert("Locked link created!");
         document.getElementById("paidRequestsForm").reset();
         refreshDashboard();
@@ -785,7 +829,7 @@
       if (confirm("Delete this request?")) {
         showSpinner(true);
         try {
-          await databases.deleteDocument(DB_ID, 'paidrequests', id);
+          await sanityMutate([{ delete: { id } }]);
           refreshDashboard();
         } catch(e) {
           alert("Delete failed.");
@@ -795,8 +839,8 @@
       }
     }
 
-    async function submitSettings(e) {
-      e.preventDefault();
+    async function submitSettings(event) {
+      event.preventDefault();
       showSpinner(true);
       try {
         const keys = {
@@ -806,16 +850,20 @@
           admin_password: document.getElementById("adminPanelPass").value.trim()
         };
 
-        const setRes = await databases.listDocuments(DB_ID, 'settings');
-        
+        const mutations = [];
         for (let k in keys) {
-          const doc = setRes.documents.find(d => d.key === k);
-          if (doc) {
-            await databases.updateDocument(DB_ID, 'settings', doc.$id, { value: keys[k] });
-          } else {
-            await databases.createDocument(DB_ID, 'settings', 'unique()', { key: k, value: keys[k] });
-          }
+          const docId = 'setting-' + k;
+          mutations.push({
+            createOrReplace: {
+              _id: docId,
+              _type: "setting",
+              key: k,
+              value: keys[k]
+            }
+          });
         }
+
+        await sanityMutate(mutations);
 
         if (keys.admin_password) {
           localStorage.setItem("admin_authenticated_session", keys.admin_password);
@@ -847,4 +895,4 @@
     function closeModal() { document.getElementById("modal").style.display = "none"; }
   </script>
 </body>
-</html>
+          </html>
