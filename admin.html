@@ -715,7 +715,7 @@
     async function submitPremium(e) {
       e.preventDefault();
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 28);
+      expiresAt.setDate(expiresAt.getDate() + 28); // exactly 28 days valid
 
       showSpinner(true);
       try {
@@ -723,7 +723,7 @@
           gmail: document.getElementById("premUser").value.trim().toLowerCase(),
           password: document.getElementById("premPass").value.trim(),
           expires_at: expiresAt.toISOString(),
-          active_session: ""
+          active_session: "" // Initialized empty so double-login blocking is secure
         });
         alert("Premium registration added successfully.");
         document.getElementById("premiumForm").reset();
