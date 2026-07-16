@@ -67,7 +67,6 @@
     .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 999; display: none; }
     .overlay.show { display: block; }
 
-    /* Featured Slider Styles */
     .slider-wrapper { overflow: hidden; padding: 0 30px; margin-bottom: 20px; position: relative; }
     .slider-container { display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -ms-overflow-style: none; padding: 10px 0; }
     .slider-container::-webkit-scrollbar { display: none; }
@@ -87,7 +86,6 @@
     .post-card:hover { transform: translateY(-8px); border-color: var(--primary); box-shadow: 0 10px 25px var(--primary-glow); }
     .post-card img { width: 100%; height: 260px; object-fit: cover; }
 
-    /* New Episode Upward Glow Neon Styles */
     .recent-glow {
       border-color: var(--primary) !important;
       box-shadow: 0 0 15px var(--primary-glow) !important;
@@ -197,7 +195,6 @@
       <i class="fa-solid fa-magnifying-glass"></i>
     </div>
     <div class="header-right">
-      <!-- Premium authentication UI element inside default header container safely -->
       <span id="premiumUserStatus" style="font-size: 12px; font-weight: bold; color: #ffd700; margin-right: 10px; display: none;"></span>
       <span id="authBtn" onclick="handleAuthAction()" style="cursor: pointer; font-size: 13px; font-weight: bold; color: var(--primary); border: 1px solid var(--border); padding: 5px 12px; border-radius: 20px;">Premium Login</span>
     </div>
@@ -216,7 +213,6 @@
   </div>
 
   <div id="mainContent">
-    <!-- Featured Slider Section -->
     <div id="featuredSection" class="slider-wrapper" style="display:none; margin-top:20px;">
       <h3 class="section-title" style="padding:10px 0; font-size:18px;">Today's <span>Featured</span></h3>
       <div id="featuredSlider" class="slider-container"></div>
@@ -239,16 +235,10 @@
     <div class="modal-box" id="modalContent"></div>
   </div>
 
-  <!-- Appwrite SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.1"></script>
   <script>
-    // Appwrite Config
-    const client = new Appwrite.Client()
-      .setEndpoint('https://fra.cloud.appwrite.io/v1')
-      .setProject('6a562e7f0030aa778863'); 
-
-    const databases = new Appwrite.Databases(client);
-    const DB_ID = '6a562f8a001c9d95454a';
+    // Sanity Config
+    const SANITY_PROJECT_ID = 'vb4q5oda'; 
+    const SANITY_DATASET = 'production';
 
     let allPosts = [];
     let settings = {};
@@ -261,9 +251,18 @@
 
     async function loadApp() {
       try {
-        const postRes = await databases.listDocuments(DB_ID, 'posts');
-        allPosts = postRes.documents.map(doc => ({
-          id: doc.$id,
+        const query = encodeURIComponent(`{
+          "posts": *[_type == "post"],
+          "settings": *[_type == "setting"]
+        }`);
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        
+        const response = await fetch(url);
+        const resData = await response.json();
+        const data = resData.result;
+
+        allPosts = data.posts.map(doc => ({
+          id: doc._id,
           name: doc.name,
           image_url: doc.image_url,
           release_date: doc.release_date,
@@ -271,11 +270,11 @@
           season: doc.season,
           short_story: doc.short_story,
           category: doc.category,
-          updatedAt: doc.$updatedAt // Store updatedAt time for auto sorting
+          updatedAt: doc._updatedAt
         }));
 
-        const settingsRes = await databases.listDocuments(DB_ID, 'settings');
-        settingsRes.documents.forEach(doc => {
+        settings = {};
+        data.settings.forEach(doc => {
           settings[doc.key] = doc.value;
         });
         
@@ -284,7 +283,7 @@
         
         handleRouting();
       } catch(e) {
-        console.error("Database connection failed", e);
+        console.error("Sanity connection failed", e);
       }
     }
 
@@ -321,7 +320,6 @@
       
       renderFeaturedSlider();
       
-      // Auto sort: Most recently updated anime floats to the top of the grid
       allPosts.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
       
       renderPosts(allPosts);
@@ -389,7 +387,6 @@
                <div class="name-style">${p.name}</div>
              </div>`;
              
-        // Dynamic Glow Badge triggers if post was updated in the last 48 hours
         const now = new Date();
         const updatedAt = new Date(p.updatedAt);
         const isRecent = (now - updatedAt) < (48 * 60 * 60 * 1000);
@@ -444,11 +441,12 @@
       `;
 
       try {
-        const epRes = await databases.listDocuments(DB_ID, 'episodes', [
-          Appwrite.Query.equal('post_id', postId)
-        ]);
+        const query = encodeURIComponent(`*[_type == "episode" && post_id == "${postId}"]`);
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const response = await fetch(url);
+        const resData = await response.json();
+        const episodes = resData.result;
         
-        const episodes = epRes.documents;
         const epGridBlock = document.getElementById("episodesBlock");
         if (epGridBlock) {
           if (!episodes || episodes.length === 0) {
@@ -462,7 +460,7 @@
                   const hasOriginal = ep.original_link && ep.original_link.trim() !== "";
                   const hasPlay = ep.play_link && ep.play_link.trim() !== "";
                   return `
-                    <button onclick="handleEpisode('${ep.$id}', '${post.name.replace(/'/g, "\\'")}', '${ep.episode_label.replace(/'/g, "\\'")}', ${hasOriginal}, ${hasPlay})">${labelDisplay}</button>
+                    <button onclick="handleEpisode('${ep._id}', '${post.name.replace(/'/g, "\\'")}', '${ep.episode_label.replace(/'/g, "\\'")}', ${hasOriginal}, ${hasPlay})">${labelDisplay}</button>
                   `;
                 }).join("")}
               </div>
@@ -546,7 +544,6 @@
       return "asi_" + Math.abs(hash).toString(16).slice(0, 8);
     }
 
-    // Dynamic Expiry + Single Session validation before allowing premium route bypass
     async function validatePremiumSession() {
       const savedGmail = localStorage.getItem("premium_gmail");
       const savedToken = localStorage.getItem("premium_session_token");
@@ -554,28 +551,27 @@
       if (!savedGmail || !savedToken) return false;
 
       try {
-        const res = await databases.listDocuments(DB_ID, 'premiumusers', [
-          Appwrite.Query.equal('gmail', savedGmail)
-        ]);
+        const query = encodeURIComponent(`*[_type == "premiumuser" && gmail == "${savedGmail}"]`);
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const response = await fetch(url);
+        const resData = await response.json();
+        const docs = resData.result;
 
-        if (res.documents.length === 0) {
+        if (docs.length === 0) {
           logoutPremium();
           return false;
         }
 
-        const user = res.documents[0];
+        const user = docs[0];
 
-        // 1. Check for Expiration (Auto-delete doc from Appwrite if expired)
         const now = new Date();
         const expiry = new Date(user.expires_at);
         if (now > expiry) {
-          await databases.deleteDocument(DB_ID, 'premiumusers', user.$id);
           alert("Your premium subscription has expired. Account auto-deactivated.");
           logoutPremium();
           return false;
         }
 
-        // 2. Prevent Double Login Session Lock
         if (user.active_session !== savedToken) {
           alert("Logged out: This premium account is logged in on another device.");
           logoutPremium();
@@ -592,7 +588,12 @@
       showModal(`<h3>Shortening Link...</h3><p>Connecting with server routing, please wait...</p>`);
       let originalLink = null;
       try {
-        const ep = await databases.getDocument(DB_ID, 'episodes', epId);
+        const query = encodeURIComponent(`*[_type == "episode" && _id == "${epId}"][0]`);
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const response = await fetch(url);
+        const resData = await response.json();
+        const ep = resData.result;
+
         originalLink = ep.original_link;
 
         if (!originalLink) {
@@ -601,7 +602,6 @@
           return;
         }
 
-        // Check if user is Premium logged in (Bypass shorteners entirely)
         const isPremiumActive = await validatePremiumSession();
         if (isPremiumActive) {
           referrersFormSubmit(originalLink);
@@ -613,8 +613,11 @@
         const separator = originalLink.includes("?") ? "&" : "?";
         originalLink = `${originalLink}${separator}asi_uid=${bypassKey}`;
 
-        const shRes = await databases.listDocuments(DB_ID, 'shorteners');
-        const shorteners = shRes.documents;
+        const shQuery = encodeURIComponent(`*[_type == "shortener"]`);
+        const shUrl = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${shQuery}`;
+        const shResponse = await fetch(shUrl);
+        const shData = await shResponse.json();
+        const shorteners = shData.result;
 
         if (shorteners.length === 0) {
           referrersFormSubmit(originalLink);
@@ -622,40 +625,29 @@
           return;
         }
 
-        // Select dynamic rotating shortener
         const sh = shorteners[Math.floor(Math.random() * shorteners.length)];
-        
-        // Dynamic Host Domain Filter Parser
         const cleanDomain = sh.dashboard_url.replace(/^(https?:\/\/)?(www\.)?/, "").split('/')[0];
-        
-        // Added &format=text for better JSON API compatibility
         const targetApi = `https://${cleanDomain}/api?api=${sh.api_key}&url=${encodeURIComponent(originalLink)}&format=text`;
         
         let shortLink = null;
         
         try {
-          // Step 1: Pehle direct fetch try karo
           const res = await fetch(targetApi);
           const textData = await res.text();
-          
           try {
             const json = JSON.parse(textData);
             shortLink = json.shortenedUrl || json.shortened_url || json.shortUrl || json.short_url || json.url || json.link;
           } catch(parseErr) {
-            // Agar JSON nahi hai, text link return hui hai
             if (textData.trim().startsWith("http")) {
               shortLink = textData.trim();
             }
           }
         } catch(e) {
           console.warn("Direct fetch blocked (CORS), trying proxy...", e);
-          
-          // Step 2: Fallback Proxy (Agar Cloudflare block na kare)
           const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetApi)}`;
           try {
             const proxyRes = await fetch(proxyUrl);
             const proxyData = await proxyRes.json();
-            
             try {
               const json = JSON.parse(proxyData.contents);
               shortLink = json.shortenedUrl || json.shortened_url || json.shortUrl || json.short_url || json.url || json.link;
@@ -698,7 +690,12 @@
       const actualPass = settings.player_password || "stream123";
 
       if(pass === actualPass) {
-        const ep = await databases.getDocument(DB_ID, 'episodes', epId);
+        const query = encodeURIComponent(`*[_type == "episode" && _id == "${epId}"][0]`);
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const response = await fetch(url);
+        const resData = await response.json();
+        const ep = resData.result;
+        
         referrersFormSubmit(ep.play_link);
         closeModal();
       } else {
@@ -722,32 +719,34 @@
       const pass = document.getElementById("premPass").value.trim();
       
       try {
-        const res = await databases.listDocuments(DB_ID, 'premiumusers', [
-          Appwrite.Query.equal('gmail', gmail),
-          Appwrite.Query.equal('password', pass)
-        ]);
+        const query = encodeURIComponent(`*[_type == "premiumuser" && gmail == "${gmail}" && password == "${pass}"]`);
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const response = await fetch(url);
+        const resData = await response.json();
+        const docs = resData.result;
 
-        if (res.documents.length > 0) {
-          const user = res.documents[0];
+        if (docs.length > 0) {
+          const user = docs[0];
           const now = new Date();
           const expiry = new Date(user.expires_at);
 
           if (now < expiry) {
             const sessionToken = Math.random().toString(36).substring(2) + Date.now();
-            await databases.updateDocument(DB_ID, 'premiumusers', user.$id, {
-              active_session: sessionToken
-            });
-
+            
             localStorage.setItem("premium_gmail", gmail);
             localStorage.setItem("premium_session_token", sessionToken);
 
             updateAuthUI();
             
-            const ep = await databases.getDocument(DB_ID, 'episodes', epId);
+            const epQuery = encodeURIComponent(`*[_type == "episode" && _id == "${epId}"][0]`);
+            const epUrl = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${epQuery}`;
+            const epResponse = await fetch(epUrl);
+            const epResData = await epResponse.json();
+            const ep = epResData.result;
+
             referrersFormSubmit(ep.original_link);
             closeModal();
           } else {
-            await databases.deleteDocument(DB_ID, 'premiumusers', user.$id);
             alert("Your premium access has expired.");
           }
         } else {
@@ -758,7 +757,6 @@
       }
     }
 
-    // Portal Global Authenticator UI controls
     function updateAuthUI() {
       const savedGmail = localStorage.getItem("premium_gmail");
       const authBtn = document.getElementById("authBtn");
@@ -800,30 +798,23 @@
       if(!gmail || !pass) return alert("Fill in all credentials");
 
       try {
-        const res = await databases.listDocuments(DB_ID, 'premiumusers', [
-          Appwrite.Query.equal('gmail', gmail),
-          Appwrite.Query.equal('password', pass)
-        ]);
+        const query = encodeURIComponent(`*[_type == "premiumuser" && gmail == "${gmail}" && password == "${pass}"]`);
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const response = await fetch(url);
+        const resData = await response.json();
+        const docs = resData.result;
 
-        if (res.documents.length > 0) {
-          const user = res.documents[0];
-          
-          // Check for Expiration
+        if (docs.length > 0) {
+          const user = docs[0];
           const now = new Date();
           const expiry = new Date(user.expires_at);
           if (now > expiry) {
-            await databases.deleteDocument(DB_ID, 'premiumusers', user.$id);
             alert("Your premium access has expired.");
             closeModal();
             return;
           }
 
-          // Session token Generation
           const sessionToken = Math.random().toString(36).substring(2) + Date.now();
-          await databases.updateDocument(DB_ID, 'premiumusers', user.$id, {
-            active_session: sessionToken
-          });
-
           localStorage.setItem("premium_gmail", gmail);
           localStorage.setItem("premium_session_token", sessionToken);
 
@@ -859,12 +850,14 @@
     async function unlockPaidRequest() {
       const pass = document.getElementById("paidKeyInput").value.trim();
       try {
-        const res = await databases.listDocuments(DB_ID, 'paidrequests', [
-          Appwrite.Query.equal('password', pass)
-        ]);
+        const query = encodeURIComponent(`*[_type == "paidrequest" && password == "${pass}"][0]`);
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const response = await fetch(url);
+        const resData = await response.json();
+        const doc = resData.result;
 
-        if (res.documents.length > 0) {
-          referrersFormSubmit(res.documents[0].original_link);
+        if (doc) {
+          referrersFormSubmit(doc.original_link);
           closeModal();
         } else {
           alert("Invalid access key!");
