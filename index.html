@@ -360,7 +360,8 @@
           "posts": *[_type == "post"],
           "settings": *[_type == "setting"]
         }`);
-        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
+        // Switched to highly reliable apicdn endpoint but kept cache-buster to prevent lagging updates
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         
         const response = await fetch(url);
         const resData = await response.json();
@@ -576,7 +577,7 @@
 
       try {
         const query = encodeURIComponent(`*[_type == "episode" && post_id == "${postId}"]`);
-        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const episodes = resData.result;
@@ -689,7 +690,7 @@
 
       try {
         const query = encodeURIComponent(`*[_type == "premiumuser" && gmail == "${savedGmail}"]`);
-        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const docs = resData.result;
@@ -726,7 +727,7 @@
       let originalLink = null;
       try {
         const query = encodeURIComponent(`*[_type == "episode" && _id == "${epId}"][0]`);
-        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const ep = resData.result;
@@ -751,7 +752,7 @@
         originalLink = `${originalLink}${separator}asi_uid=${bypassKey}`;
 
         const shQuery = encodeURIComponent(`*[_type == "shortener"]`);
-        const shUrl = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${shQuery}&_cb=${Date.now()}`;
+        const shUrl = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${shQuery}&_cb=${Date.now()}`;
         const shResponse = await fetch(shUrl);
         const shData = await shResponse.json();
         const shorteners = shData.result;
@@ -828,7 +829,7 @@
 
       if(pass === actualPass) {
         const query = encodeURIComponent(`*[_type == "episode" && _id == "${epId}"][0]`);
-        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const ep = resData.result;
@@ -857,7 +858,7 @@
       
       try {
         const query = encodeURIComponent(`*[_type == "premiumuser" && gmail == "${gmail}" && password == "${pass}"]`);
-        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const docs = resData.result;
@@ -876,7 +877,7 @@
             updateAuthUI();
             
             const epQuery = encodeURIComponent(`*[_type == "episode" && _id == "${epId}"][0]`);
-            const epUrl = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${epQuery}&_cb=${Date.now()}`;
+            const epUrl = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${epQuery}&_cb=${Date.now()}`;
             const epResponse = await fetch(epUrl);
             const epResData = await epResponse.json();
             const ep = epResData.result;
@@ -936,7 +937,7 @@
 
       try {
         const query = encodeURIComponent(`*[_type == "premiumuser" && gmail == "${gmail}" && password == "${pass}"]`);
-        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const docs = resData.result;
@@ -988,7 +989,7 @@
       const pass = document.getElementById("paidKeyInput").value.trim();
       try {
         const query = encodeURIComponent(`*[_type == "paidrequest" && password == "${pass}"][0]`);
-        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
+        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const doc = resData.result;
