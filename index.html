@@ -6,7 +6,7 @@
   <title>Watch Anime Studio - Free Anime Sub/Dub in Hindi</title>
   
   <meta name="description" content="Stream or download free Anime Hindi Sub/Dub, Korean Drama (K-Drama), and Chinese Donghua in Hindi. Watch the latest Anime episodes, Movies, and read Manga online for free.">
-  <meta name="keywords" content="Hindi sub anime, Hindi sub series, Hindi sub donghua, Hindi sub doungwa, K drama Hindi sub, Hindi dub movies, Hindi dub series, Hindi dub anime, Hindi sub manga, Chinese anime hindi subbed, Korean drama hindi subbed, anime in hindi, watch anime online free, free download anime hindi, watch donghua hindi, free manga hindi subbed">
+  <meta name="keywords" content="Hindi sub anime, Hindi sub series, Hindi sub donghua, Hindi sub doungwa, K drama Hindi sub, Hindi dub movies, Hindi dub series, Hindi dub anime, Hindi sub manga, Chinese anime hindi subbed, Korean drama hindi dubbed, anime in hindi, watch anime online free, free download anime hindi, watch donghua hindi, free manga hindi subbed">
   <meta name="robots" content="index, follow">
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -622,8 +622,10 @@
         // Select dynamic rotating shortener
         const sh = shorteners[Math.floor(Math.random() * shorteners.length)];
         
-        // Deep search fix: Fallback mapping checking for all standard shortener response keys
-        const targetApi = `https://${sh.dashboard_url}/api?api=${sh.api_key}&url=${encodeURIComponent(originalLink)}`;
+        // Dynamic Host Domain Filter Parser
+        const cleanDomain = sh.dashboard_url.replace(/^(https?:\/\/)?(www\.)?/, "").split('/')[0];
+        
+        const targetApi = `https://${cleanDomain}/api?api=${sh.api_key}&url=${encodeURIComponent(originalLink)}`;
         // Correct official JSON wrap-up to secure 100% CORS parsing
         const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetApi)}`;
         
@@ -698,7 +700,7 @@
           const now = new Date();
           const expiry = new Date(user.expires_at);
 
-          if (expiry > now) {
+          if (now < expiry) {
             const sessionToken = Math.random().toString(36).substring(2) + Date.now();
             await databases.updateDocument(DB_ID, 'premiumusers', user.$id, {
               active_session: sessionToken
