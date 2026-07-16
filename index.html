@@ -1,3 +1,4 @@
+--- START OF FILE Anime-sub-studio-main/index.html ---
 <!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -12,17 +13,17 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root { 
-      --bg: #09090b; 
-      --header: rgba(18, 18, 22, 0.9); 
-      --card-bg: rgba(22, 22, 26, 0.6);
-      --primary: #e50914; 
-      --primary-glow: rgba(229, 9, 20, 0.35);
+      --bg: #050507; 
+      --header: rgba(10, 16, 13, 0.9); 
+      --card-bg: rgba(12, 22, 16, 0.65);
+      --primary: #00ff66; /* Neon Glowing Green */
+      --primary-glow: rgba(0, 255, 102, 0.35);
       --text: #ffffff; 
-      --text-muted: #a1a1aa;
-      --border: rgba(255, 255, 255, 0.08); 
+      --text-muted: #a3b8cc;
+      --border: rgba(0, 255, 102, 0.15); 
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-    body { background: var(--bg); color: var(--text); overflow-x: hidden; min-height: 100vh; }
+    body { background: var(--bg); color: var(--text); overflow-x: hidden; min-height: 100vh; position: relative; }
     
     .header { 
       background: var(--header); 
@@ -43,6 +44,7 @@
       cursor: pointer; 
       text-transform: uppercase; 
       letter-spacing: 1.5px; 
+      text-shadow: 0 0 10px var(--primary-glow);
     }
     .search-bar { flex: 1; margin: 0 40px; max-width: 500px; position: relative; }
     .search-bar input { 
@@ -50,20 +52,26 @@
       padding: 12px 20px 12px 45px; 
       border: 1px solid var(--border); 
       border-radius: 30px; 
-      background: rgba(30, 30, 35, 0.6); 
+      background: rgba(12, 22, 16, 0.6); 
       color: white; 
       font-size: 14px; 
+      outline: none;
+      transition: 0.3s;
     }
-    .search-bar i { position: absolute; left: 18px; top: 15px; color: #a1a1aa; }
+    .search-bar input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+    .search-bar i { position: absolute; left: 18px; top: 15px; color: #a3b8cc; }
     .header-right { display: flex; align-items: center; gap: 15px; }
     
-    .menu-btn { font-size: 24px; cursor: pointer; color: var(--primary); }
+    .menu-btn { font-size: 24px; cursor: pointer; color: var(--primary); text-shadow: 0 0 5px var(--primary-glow); }
 
-    .sidebar { position: fixed; right: -280px; top: 0; width: 280px; height: 100%; background: rgba(15, 15, 20, 0.98); padding: 30px 20px; transition: 0.3s; z-index: 1000; overflow-y: auto; border-left: 1px solid var(--border); }
+    .sidebar { position: fixed; right: -280px; top: 0; width: 280px; height: 100%; background: rgba(5, 10, 7, 0.98); padding: 30px 20px; transition: 0.3s; z-index: 1000; overflow-y: auto; border-left: 1px solid var(--border); }
     .sidebar.open { right: 0; }
-    .sidebar h3 { font-size: 20px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; font-weight: 800; }
+    .sidebar h3 { font-size: 20px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; font-weight: 800; text-shadow: 0 0 8px var(--primary-glow); }
     .sidebar a { display: flex; align-items: center; gap: 12px; color: white; padding: 12px 15px; text-decoration: none; margin: 8px 0; border-radius: 8px; font-weight: bold; }
-    .sidebar a:hover { background: rgba(229, 9, 20, 0.1); color: var(--primary); }
+    .sidebar a:hover { background: rgba(0, 255, 102, 0.1); color: var(--primary); }
     .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 999; display: none; }
     .overlay.show { display: block; }
 
@@ -71,14 +79,14 @@
     .slider-container { display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -ms-overflow-style: none; padding: 10px 0; }
     .slider-container::-webkit-scrollbar { display: none; }
     .slide-card { flex: 0 0 280px; height: 160px; border-radius: 12px; position: relative; overflow: hidden; cursor: pointer; border: 1px solid var(--border); scroll-snap-align: start; transition: transform 0.3s, border-color 0.3s; }
-    .slide-card:hover { transform: scale(1.02); border-color: var(--primary); }
+    .slide-card:hover { transform: scale(1.02); border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
     .slide-card img { width: 100%; height: 100%; object-fit: cover; }
-    .slide-info { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(9,9,11,0.95), transparent); padding: 12px; }
+    .slide-info { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(5,5,7,0.95), transparent); padding: 12px; }
     .slide-title { font-weight: bold; font-size: 13px; color: white; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
     .slide-tag { font-size: 10px; color: var(--primary); font-weight: 800; text-transform: uppercase; }
 
     .section-title { padding: 40px 30px 10px 30px; font-size: 26px; text-transform: uppercase; font-weight: 800; }
-    .section-title span { color: var(--primary); }
+    .section-title span { color: var(--primary); text-shadow: 0 0 10px var(--primary-glow); }
     
     .posts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 25px; padding: 20px 30px; }
     
@@ -93,20 +101,20 @@
     }
     @keyframes pulseGlow {
       0% { box-shadow: 0 0 4px var(--primary-glow); }
-      100% { box-shadow: 0 0 18px rgba(229, 9, 20, 0.55); }
+      100% { box-shadow: 0 0 18px rgba(0, 255, 102, 0.55); }
     }
     .new-badge {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: #ffd700;
+      background: var(--primary);
       color: #000;
       padding: 3px 8px;
       border-radius: 4px;
       font-size: 10px;
       font-weight: 900;
       text-transform: uppercase;
-      box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+      box-shadow: 0 0 8px var(--primary-glow);
       z-index: 10;
     }
     
@@ -119,7 +127,7 @@
       align-items: center;
       padding: 20px;
       text-align: center;
-      background: linear-gradient(-45deg, #e50914, #121214, #0088cc, #222226);
+      background: linear-gradient(-45deg, #00ff66, #050507, #00b34a, #121214);
       background-size: 400% 400%;
       animation: gradientShift 10s ease infinite;
       border-bottom: 1px solid var(--border);
@@ -129,38 +137,75 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-    .fallback-box .cat { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #ffd700; margin-bottom: 12px; font-weight: bold; }
+    .fallback-box .cat { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 12px; font-weight: bold; text-shadow: 0 0 5px var(--primary-glow); }
     .fallback-box .name-style { font-size: 20px; font-weight: 900; line-height: 1.3; color: #ffffff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
 
-    .post-card .category-tag { position: absolute; top: 10px; right: 10px; background: var(--primary); color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; }
+    .post-card .category-tag { position: absolute; top: 10px; right: 10px; background: var(--primary); color: #000; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; }
     .post-card .title-text { padding: 15px; font-size: 14px; text-align: center; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .detail-page { display: none; padding: 40px 30px; max-width: 1100px; margin: 40px auto; background: rgba(22, 22, 26, 0.8); border-radius: 16px; border: 1px solid var(--border); }
+    .detail-page { display: none; padding: 40px 30px; max-width: 1100px; margin: 40px auto; background: rgba(12, 22, 16, 0.85); border-radius: 16px; border: 1px solid var(--border); }
     .detail-page.active { display: block; }
     .back-btn { background: none; color: var(--primary); border: 1px solid var(--border); padding: 8px 18px; border-radius: 20px; font-size: 14px; cursor: pointer; margin-bottom: 30px; font-weight: bold; }
+    .back-btn:hover { background: rgba(0, 255, 102, 0.1); box-shadow: 0 0 10px var(--primary-glow); }
     
     .detail-header { display: flex; gap: 40px; flex-wrap: wrap; margin-bottom: 40px; }
-    .detail-header img { width: 260px; border-radius: 12px; }
+    .detail-header img { width: 260px; border-radius: 12px; border: 1px solid var(--border); }
     
     .detail-info { flex: 1; min-width: 300px; }
-    .detail-info h2 { font-size: 34px; margin-bottom: 20px; color: var(--primary); font-weight: 900; }
+    .detail-info h2 { font-size: 34px; margin-bottom: 20px; color: var(--primary); font-weight: 900; text-shadow: 0 0 8px var(--primary-glow); }
     .detail-info p { margin-bottom: 14px; font-size: 15px; line-height: 1.7; color: var(--text-muted); }
     .detail-info p strong { color: white; }
     
-    .episodes { margin-top: 40px; background: rgba(15, 15, 20, 0.6); padding: 30px; border-radius: 12px; border: 1px solid var(--border); }
+    .episodes { margin-top: 40px; background: rgba(5, 10, 7, 0.6); padding: 30px; border-radius: 12px; border: 1px solid var(--border); }
     .episodes h3 { border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 25px; }
     .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
-    .episodes button { background: #1f1f23; color: white; border: 1px solid var(--border); padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-    .episodes button:hover { background: var(--primary); border-color: var(--primary); transform: translateY(-3px); }
+    .episodes button { background: #121c16; color: white; border: 1px solid var(--border); padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .episodes button:hover { background: var(--primary); border-color: var(--primary); color: #000; transform: translateY(-3px); box-shadow: 0 5px 15px var(--primary-glow); }
 
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
     .modal.active { display: flex; }
-    .modal-box { background: #121214; border: 1px solid var(--border); padding: 40px; border-radius: 16px; text-align: center; width: 100%; max-width: 440px; position: relative; }
-    .modal-box h3 { margin-bottom: 15px; color: var(--primary); font-size: 24px; font-weight: 800; }
+    .modal-box { background: #070d0a; border: 1px solid var(--border); padding: 40px; border-radius: 16px; text-align: center; width: 100%; max-width: 440px; position: relative; box-shadow: 0 0 30px rgba(0, 255, 102, 0.1); }
+    .modal-box h3 { margin-bottom: 15px; color: var(--primary); font-size: 24px; font-weight: 800; text-shadow: 0 0 8px var(--primary-glow); }
     .modal-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 25px; }
-    .modal-box input { width: 100%; padding: 14px; margin-bottom: 15px; background: #1a1a1f; border: 1px solid var(--border); color: white; border-radius: 8px; text-align: center; }
-    .modal-box button { background: var(--primary); color: white; padding: 14px; border: none; border-radius: 8px; margin: 8px 0; cursor: pointer; font-weight: bold; width: 100%; }
+    .modal-box input { width: 100%; padding: 14px; margin-bottom: 15px; background: #0d1410; border: 1px solid var(--border); color: white; border-radius: 8px; text-align: center; outline: none; }
+    .modal-box input:focus { border-color: var(--primary); }
+    .modal-box button { background: var(--primary); color: #000; padding: 14px; border: none; border-radius: 8px; margin: 8px 0; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
+    .modal-box button:hover { box-shadow: 0 0 15px var(--primary-glow); }
     .close-modal { position: absolute; top: 18px; right: 18px; font-size: 24px; cursor: pointer; color: #777; }
+
+    /* Pagination Styling */
+    .pagination-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin: 40px auto;
+      padding: 10px;
+    }
+    .pagination-btn {
+      background: rgba(12, 22, 16, 0.8);
+      border: 1px solid var(--border);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+    .pagination-btn:hover:not(:disabled) {
+      background: var(--primary);
+      color: #050507;
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+    .pagination-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .page-indicator {
+      font-weight: bold;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
 
     .seo-tag-cloud {
       opacity: 0.18;
@@ -177,8 +222,9 @@
     @media (max-width: 768px) {
       .header { padding: 12px 15px; flex-wrap: wrap; gap: 12px; }
       .search-bar { order: 3; margin: 0; width: 100%; flex: 1 1 100%; }
-      .posts-grid { grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 15px; padding: 15px; }
-      .post-card img, .fallback-box { height: 190px; }
+      /* Mobile Single Card Layout */
+      .posts-grid { grid-template-columns: 1fr; gap: 25px; padding: 15px; }
+      .post-card img, .fallback-box { height: 280px; }
       .slider-wrapper { padding: 0 15px; }
     }
   </style>
@@ -195,7 +241,7 @@
       <i class="fa-solid fa-magnifying-glass"></i>
     </div>
     <div class="header-right">
-      <span id="premiumUserStatus" style="font-size: 12px; font-weight: bold; color: #ffd700; margin-right: 10px; display: none;"></span>
+      <span id="premiumUserStatus" style="font-size: 12px; font-weight: bold; color: var(--primary); margin-right: 10px; display: none;"></span>
       <span id="authBtn" onclick="handleAuthAction()" style="cursor: pointer; font-size: 13px; font-weight: bold; color: var(--primary); border: 1px solid var(--border); padding: 5px 12px; border-radius: 20px;">Premium Login</span>
     </div>
   </div>
@@ -207,7 +253,7 @@
     <a href="#" onclick="showSidebarSection('category')"><i class="fa-solid fa-layer-group"></i> Categories</a>
     <a href="#" onclick="showSidebarSection('genre')"><i class="fa-solid fa-masks-theater"></i> Genres</a>
     <a href="#" onclick="showSidebarSection('az')"><i class="fa-solid fa-arrow-down-a-z"></i> A2Z List</a>
-    <a href="#" onclick="openPaidRequestPrompt()"><i class="fa-solid fa-key" style="color:#ffd700;"></i> Paid Unlock</a>
+    <a href="#" onclick="openPaidRequestPrompt()"><i class="fa-solid fa-key"></i> Paid Unlock</a>
     <a href="#" id="tgChannel" target="_blank"><i class="fa-brands fa-telegram"></i> Telegram Channel</a>
     <a href="#" id="tgGroup" target="_blank"><i class="fa-brands fa-telegram"></i> Telegram Group</a>
   </div>
@@ -220,6 +266,9 @@
 
     <h2 class="section-title" id="gridTitle">All <span>Anime Series</span></h2>
     <div id="postsGrid" class="posts-grid"></div>
+    
+    <!-- Pagination Container -->
+    <div id="paginationControls" class="pagination-controls"></div>
     
     <div id="detailPage" class="detail-page">
       <button class="back-btn" onclick="window.history.back()"><i class="fa-solid fa-arrow-left"></i> Back</button>
@@ -243,11 +292,74 @@
     let allPosts = [];
     let settings = {};
 
+    // Pagination variables
+    let currentPage = 1;
+    const postsPerPage = 6;
+    let currentFilteredPosts = [];
+
     document.addEventListener("DOMContentLoaded", () => {
+      initStarfield();
       loadApp();
       updateAuthUI();
       window.addEventListener("hashchange", handleRouting);
     });
+
+    // Starfield background effect generator
+    function initStarfield() {
+      const canvas = document.createElement('canvas');
+      canvas.id = 'starfield';
+      canvas.style.position = 'fixed';
+      canvas.style.top = '0';
+      canvas.style.left = '0';
+      canvas.style.width = '100vw';
+      canvas.style.height = '100vh';
+      canvas.style.zIndex = '-1';
+      canvas.style.pointerEvents = 'none';
+      document.body.appendChild(canvas);
+
+      const ctx = canvas.getContext('2d');
+      let stars = [];
+      const numStars = 50;
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      for (let i = 0; i < numStars; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 1.5 + 0.5,
+          speed: Math.random() * 0.2 + 0.05,
+          alpha: Math.random(),
+          glow: Math.random() > 0.4
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let star of stars) {
+          star.y -= star.speed;
+          if (star.y < 0) {
+            star.y = canvas.height;
+            star.x = Math.random() * canvas.width;
+          }
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+          if (star.glow) {
+            ctx.fillStyle = `rgba(0, 255, 102, ${Math.sin(Date.now() * 0.001 + star.alpha) * 0.4 + 0.5})`;
+          } else {
+            ctx.fillStyle = `rgba(255, 255, 255, ${Math.sin(Date.now() * 0.001 + star.alpha) * 0.3 + 0.4})`;
+          }
+          ctx.fill();
+        }
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
 
     async function loadApp() {
       try {
@@ -255,7 +367,8 @@
           "posts": *[_type == "post"],
           "settings": *[_type == "setting"]
         }`);
-        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        // Real-time API Endpoint query using cache busting to load instantly
+        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         
         const response = await fetch(url);
         const resData = await response.json();
@@ -290,6 +403,7 @@
     function handleRouting() {
       const hash = window.location.hash || "#home";
       closeModal();
+      currentPage = 1; // Reset page whenever routing changes
       
       if (hash.startsWith("#detail?id=")) {
         const postId = hash.split("?id=")[1];
@@ -314,6 +428,7 @@
 
     function renderHomeView() {
       document.getElementById("postsGrid").style.display = "grid";
+      document.getElementById("paginationControls").style.display = "flex";
       document.getElementById("gridTitle").style.display = "block";
       document.getElementById("gridTitle").innerHTML = `All <span>Anime Series</span>`;
       document.getElementById("detailPage").classList.remove("active");
@@ -321,7 +436,6 @@
       renderFeaturedSlider();
       
       allPosts.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-      
       renderPosts(allPosts);
     }
 
@@ -372,14 +486,26 @@
       }, 5000);
     }
 
+    // Displays exactly 6 items with paginated interface
     function renderPosts(posts) {
+      currentFilteredPosts = posts;
       const grid = document.getElementById("postsGrid");
+      const paginationControls = document.getElementById("paginationControls");
+      
       if (posts.length === 0) {
         grid.innerHTML = "<div style='grid-column:1/-1; text-align:center; padding:50px;'>No anime found.</div>";
+        paginationControls.innerHTML = "";
         return;
       }
+
+      const totalPages = Math.ceil(posts.length / postsPerPage);
+      if (currentPage > totalPages) currentPage = 1;
+
+      const startIndex = (currentPage - 1) * postsPerPage;
+      const endIndex = startIndex + postsPerPage;
+      const paginatedSlice = posts.slice(startIndex, endIndex);
       
-      grid.innerHTML = posts.map(p => {
+      grid.innerHTML = paginatedSlice.map(p => {
         const mediaSection = (p.image_url && p.image_url.trim().startsWith("http")) 
           ? `<img src="${p.image_url}" alt="${p.name}">` 
           : `<div class="fallback-box">
@@ -402,16 +528,34 @@
           </div>
         `;
       }).join("");
+
+      // Render pagination UI elements
+      if (totalPages > 1) {
+        paginationControls.innerHTML = `
+          <button class="pagination-btn" id="prevPageBtn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(-1)"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+          <span class="page-indicator">Page ${currentPage} of ${totalPages}</span>
+          <button class="pagination-btn" id="nextPageBtn" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(1)">Next <i class="fa-solid fa-chevron-right"></i></button>
+        `;
+      } else {
+        paginationControls.innerHTML = "";
+      }
+    }
+
+    function changePage(direction) {
+      currentPage += direction;
+      renderPosts(currentFilteredPosts);
+      document.getElementById("gridTitle").scrollIntoView({ behavior: 'smooth' });
     }
 
     async function renderDetailView(postId) {
-      const post = allPosts.find(p => p.id === postId);
-      if (!post) return renderHomeView();
-      
       document.getElementById("postsGrid").style.display = "none";
+      document.getElementById("paginationControls").style.display = "none";
       document.getElementById("gridTitle").style.display = "none";
       document.getElementById("featuredSection").style.display = "none";
       document.getElementById("detailPage").classList.add("active");
+
+      const post = allPosts.find(p => p.id === postId);
+      if (!post) return renderHomeView();
       
       const mediaSection = (post.image_url && post.image_url.trim().startsWith("http")) 
           ? `<img src="${post.image_url}" alt="${post.name}">` 
@@ -442,7 +586,7 @@
 
       try {
         const query = encodeURIComponent(`*[_type == "episode" && post_id == "${postId}"]`);
-        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const episodes = resData.result;
@@ -474,6 +618,7 @@
 
     function renderCategoryFilter(cat) {
       document.getElementById("postsGrid").style.display = "grid";
+      document.getElementById("paginationControls").style.display = "flex";
       document.getElementById("gridTitle").style.display = "block";
       document.getElementById("featuredSection").style.display = "none";
       document.getElementById("detailPage").classList.remove("active");
@@ -483,6 +628,7 @@
 
     function renderGenreFilter(genre) {
       document.getElementById("postsGrid").style.display = "grid";
+      document.getElementById("paginationControls").style.display = "flex";
       document.getElementById("gridTitle").style.display = "block";
       document.getElementById("featuredSection").style.display = "none";
       document.getElementById("detailPage").classList.remove("active");
@@ -492,6 +638,7 @@
 
     function renderLetterFilter(l) {
       document.getElementById("postsGrid").style.display = "grid";
+      document.getElementById("paginationControls").style.display = "flex";
       document.getElementById("gridTitle").style.display = "block";
       document.getElementById("featuredSection").style.display = "none";
       document.getElementById("detailPage").classList.remove("active");
@@ -525,10 +672,10 @@
         modalHTML += `<button onclick="solveShortener('${epId}')"><i class="fa-solid fa-download"></i> Solve Shortener & Download</button>`;
       }
       if (hasPlay) {
-        modalHTML += `<button onclick="openStreamingPrompt('${epId}')" style="background:#0088cc;"><i class="fa-solid fa-play"></i> Private Stream</button>`;
+        modalHTML += `<button onclick="openStreamingPrompt('${epId}')" style="background:#0088cc; color: #fff;"><i class="fa-solid fa-play"></i> Private Stream</button>`;
       }
       if (hasOriginal) {
-        modalHTML += `<button onclick="openPremiumPrompt('${epId}')" style="background:#00b359;"><i class="fa-solid fa-gem"></i> Premium Login Direct Route</button>`;
+        modalHTML += `<button onclick="openPremiumPrompt('${epId}')" style="background:#00b359; color: #000;"><i class="fa-solid fa-gem"></i> Premium Login Direct Route</button>`;
       }
       
       showModal(modalHTML);
@@ -552,7 +699,7 @@
 
       try {
         const query = encodeURIComponent(`*[_type == "premiumuser" && gmail == "${savedGmail}"]`);
-        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const docs = resData.result;
@@ -589,7 +736,7 @@
       let originalLink = null;
       try {
         const query = encodeURIComponent(`*[_type == "episode" && _id == "${epId}"][0]`);
-        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const ep = resData.result;
@@ -614,7 +761,7 @@
         originalLink = `${originalLink}${separator}asi_uid=${bypassKey}`;
 
         const shQuery = encodeURIComponent(`*[_type == "shortener"]`);
-        const shUrl = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${shQuery}`;
+        const shUrl = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${shQuery}&_cb=${Date.now()}`;
         const shResponse = await fetch(shUrl);
         const shData = await shResponse.json();
         const shorteners = shData.result;
@@ -691,7 +838,7 @@
 
       if(pass === actualPass) {
         const query = encodeURIComponent(`*[_type == "episode" && _id == "${epId}"][0]`);
-        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const ep = resData.result;
@@ -720,7 +867,7 @@
       
       try {
         const query = encodeURIComponent(`*[_type == "premiumuser" && gmail == "${gmail}" && password == "${pass}"]`);
-        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const docs = resData.result;
@@ -739,7 +886,7 @@
             updateAuthUI();
             
             const epQuery = encodeURIComponent(`*[_type == "episode" && _id == "${epId}"][0]`);
-            const epUrl = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${epQuery}`;
+            const epUrl = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${epQuery}&_cb=${Date.now()}`;
             const epResponse = await fetch(epUrl);
             const epResData = await epResponse.json();
             const ep = epResData.result;
@@ -799,7 +946,7 @@
 
       try {
         const query = encodeURIComponent(`*[_type == "premiumuser" && gmail == "${gmail}" && password == "${pass}"]`);
-        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const docs = resData.result;
@@ -851,7 +998,7 @@
       const pass = document.getElementById("paidKeyInput").value.trim();
       try {
         const query = encodeURIComponent(`*[_type == "paidrequest" && password == "${pass}"][0]`);
-        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const doc = resData.result;
@@ -870,6 +1017,7 @@
     function searchPosts() {
       const term = document.getElementById("searchInput").value.toLowerCase();
       const filtered = allPosts.filter(p => p.name.toLowerCase().includes(term) || (p.genres && p.genres.toLowerCase().includes(term)));
+      currentPage = 1; // Reset to page 1 on active searches
       renderPosts(filtered);
     }
 
