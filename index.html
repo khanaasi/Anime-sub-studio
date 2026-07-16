@@ -1,4 +1,3 @@
---- START OF FILE Anime-sub-studio-main/index.html ---
 <!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -16,7 +15,7 @@
       --bg: #050507; 
       --header: rgba(10, 16, 13, 0.9); 
       --card-bg: rgba(12, 22, 16, 0.65);
-      --primary: #00ff66; /* Neon Glowing Green */
+      --primary: #00ff66; 
       --primary-glow: rgba(0, 255, 102, 0.35);
       --text: #ffffff; 
       --text-muted: #a3b8cc;
@@ -173,7 +172,6 @@
     .modal-box button:hover { box-shadow: 0 0 15px var(--primary-glow); }
     .close-modal { position: absolute; top: 18px; right: 18px; font-size: 24px; cursor: pointer; color: #777; }
 
-    /* Pagination Styling */
     .pagination-controls {
       display: flex;
       justify-content: center;
@@ -222,7 +220,6 @@
     @media (max-width: 768px) {
       .header { padding: 12px 15px; flex-wrap: wrap; gap: 12px; }
       .search-bar { order: 3; margin: 0; width: 100%; flex: 1 1 100%; }
-      /* Mobile Single Card Layout */
       .posts-grid { grid-template-columns: 1fr; gap: 25px; padding: 15px; }
       .post-card img, .fallback-box { height: 280px; }
       .slider-wrapper { padding: 0 15px; }
@@ -267,7 +264,6 @@
     <h2 class="section-title" id="gridTitle">All <span>Anime Series</span></h2>
     <div id="postsGrid" class="posts-grid"></div>
     
-    <!-- Pagination Container -->
     <div id="paginationControls" class="pagination-controls"></div>
     
     <div id="detailPage" class="detail-page">
@@ -285,14 +281,12 @@
   </div>
 
   <script>
-    // Sanity Config
     const SANITY_PROJECT_ID = 'vb4q5oda'; 
     const SANITY_DATASET = 'production';
 
     let allPosts = [];
     let settings = {};
 
-    // Pagination variables
     let currentPage = 1;
     const postsPerPage = 6;
     let currentFilteredPosts = [];
@@ -304,7 +298,6 @@
       window.addEventListener("hashchange", handleRouting);
     });
 
-    // Starfield background effect generator
     function initStarfield() {
       const canvas = document.createElement('canvas');
       canvas.id = 'starfield';
@@ -367,7 +360,6 @@
           "posts": *[_type == "post"],
           "settings": *[_type == "setting"]
         }`);
-        // Real-time API Endpoint query using cache busting to load instantly
         const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         
         const response = await fetch(url);
@@ -403,7 +395,7 @@
     function handleRouting() {
       const hash = window.location.hash || "#home";
       closeModal();
-      currentPage = 1; // Reset page whenever routing changes
+      currentPage = 1;
       
       if (hash.startsWith("#detail?id=")) {
         const postId = hash.split("?id=")[1];
@@ -486,7 +478,6 @@
       }, 5000);
     }
 
-    // Displays exactly 6 items with paginated interface
     function renderPosts(posts) {
       currentFilteredPosts = posts;
       const grid = document.getElementById("postsGrid");
@@ -529,7 +520,6 @@
         `;
       }).join("");
 
-      // Render pagination UI elements
       if (totalPages > 1) {
         paginationControls.innerHTML = `
           <button class="pagination-btn" id="prevPageBtn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(-1)"><i class="fa-solid fa-chevron-left"></i> Prev</button>
@@ -1017,7 +1007,7 @@
     function searchPosts() {
       const term = document.getElementById("searchInput").value.toLowerCase();
       const filtered = allPosts.filter(p => p.name.toLowerCase().includes(term) || (p.genres && p.genres.toLowerCase().includes(term)));
-      currentPage = 1; // Reset to page 1 on active searches
+      currentPage = 1;
       renderPosts(filtered);
     }
 
