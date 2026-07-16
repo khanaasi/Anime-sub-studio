@@ -6,7 +6,7 @@
   <title>Watch Anime Studio - Free Anime Sub/Dub in Hindi</title>
   
   <meta name="description" content="Stream or download free Anime Hindi Sub/Dub, Korean Drama (K-Drama), and Chinese Donghua in Hindi. Watch the latest Anime episodes, Movies, and read Manga online for free.">
-  <meta name="keywords" content="Hindi sub anime, Hindi sub series, Hindi sub donghua, Hindi sub doungwa, K drama Hindi sub, Hindi dub movies, Hindi dub series, Hindi dub anime, Hindi sub manga, Chinese anime hindi subbed, Korean drama hindi dubbed, anime in hindi, watch anime online free, free download anime hindi, watch donghua hindi, free manga hindi subbed">
+  <meta name="keywords" content="Hindi sub anime, Hindi sub series, Hindi sub donghua, Hindi sub doungwa, K drama Hindi sub, Hindi dub movies, Hindi dub series, Hindi dub anime, Hindi sub manga, Chinese anime hindi subbed, Korean drama hindi subbed, anime in hindi, watch anime online free, free download anime hindi, watch donghua hindi, free manga hindi subbed">
   <meta name="robots" content="index, follow">
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -58,14 +58,6 @@
     .header-right { display: flex; align-items: center; gap: 15px; }
     
     .menu-btn { font-size: 24px; cursor: pointer; color: var(--primary); }
-
-    .sidebar { position: fixed; right: -280px; top: 0; width: 280px; height: 100%; background: rgba(15, 15, 20, 0.98); padding: 30px 20px; transition: 0.3s; z-index: 1000; overflow-y: auto; border-left: 1px solid var(--border); }
-    .sidebar.open { right: 0; }
-    .sidebar h3 { font-size: 20px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; font-weight: 800; }
-    .sidebar a { display: flex; align-items: center; gap: 12px; color: white; padding: 12px 15px; text-decoration: none; margin: 8px 0; border-radius: 8px; font-weight: bold; }
-    .sidebar a:hover { background: rgba(229, 9, 20, 0.1); color: var(--primary); }
-    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 999; display: none; }
-    .overlay.show { display: block; }
 
     /* Featured Slider Styles */
     .slider-wrapper { overflow: hidden; padding: 0 30px; margin-bottom: 20px; position: relative; }
@@ -169,6 +161,9 @@
       <i class="fa-solid fa-magnifying-glass"></i>
     </div>
     <div class="header-right">
+      <!-- Dynamic Premium User login indicator -->
+      <span id="premiumStatusText" style="font-size: 13px; font-weight: bold; color: #ffd700; margin-right: 10px;"></span>
+      <button id="authBtn" class="back-btn" style="margin-bottom:0; padding: 6px 14px;" onclick="handleAuthAction()">Premium Login</button>
       <span class="menu-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></span>
     </div>
   </div>
@@ -225,12 +220,12 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       loadApp();
+      updateAuthUI();
       window.addEventListener("hashchange", handleRouting);
     });
 
     async function loadApp() {
       try {
-        // Fetch Posts - Database collections are completely lowercase to show old data
         const postRes = await databases.listDocuments(DB_ID, 'posts');
         allPosts = postRes.documents.map(doc => ({
           id: doc.$id,
@@ -243,7 +238,6 @@
           category: doc.category
         }));
 
-        // Fetch Settings
         const settingsRes = await databases.listDocuments(DB_ID, 'settings');
         settingsRes.documents.forEach(doc => {
           settings[doc.key] = doc.value;
@@ -504,6 +498,48 @@
       return "asi_" + Math.abs(hash).toString(16).slice(0, 8);
     }
 
+    // Dynamic Expiry + Single Session validation before allowing premium route bypass
+    async function validatePremiumSession() {
+      const savedGmail = localStorage.getItem("premium_gmail");
+      const savedToken = localStorage.getItem("premium_session_token");
+
+      if (!savedGmail || !savedToken) return false;
+
+      try {
+        const res = await databases.listDocuments(DB_ID, 'premiumusers', [
+          Appwrite.Query.equal('gmail', savedGmail)
+        ]);
+
+        if (res.documents.length === 0) {
+          logoutPremium();
+          return false;
+        }
+
+        const user = res.documents[0];
+
+        // 1. Check for Expiration (Auto-delete doc from Appwrite if expired)
+        const now = new Date();
+        const expiry = new Date(user.expires_at);
+        if (now > expiry) {
+          await databases.deleteDocument(DB_ID, 'premiumusers', user.$id);
+          alert("Your premium subscription has expired. Account auto-deactivated.");
+          logoutPremium();
+          return false;
+        }
+
+        // 2. Prevent Double Login Session Lock
+        if (user.active_session !== savedToken) {
+          alert("Logged out: This premium account is logged in on another device.");
+          logoutPremium();
+          return false;
+        }
+
+        return true;
+      } catch (err) {
+        return false;
+      }
+    }
+
     async function solveShortener(epId) {
       showModal(`<h3>Shortening Link...</h3><p>Connecting with server routing, please wait...</p>`);
       try {
@@ -512,6 +548,14 @@
 
         if (!originalLink) {
           alert("Error: Link missing.");
+          closeModal();
+          return;
+        }
+
+        // Check if user is Premium logged in (Bypass shorteners entirely)
+        const isPremiumActive = await validatePremiumSession();
+        if (isPremiumActive) {
+          referrersFormSubmit(originalLink);
           closeModal();
           return;
         }
@@ -529,14 +573,24 @@
           return;
         }
 
+        // Select dynamic rotating shortener
         const sh = shorteners[Math.floor(Math.random() * shorteners.length)];
-        const apiUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://${sh.dashboard_url}/api?api=${sh.api_key}&url=${encodeURIComponent(originalLink)}`)}`;
         
-        const res = await fetch(apiUrl);
-        const json = await res.json();
+        // Deep search fix: Fallback mapping checking for all standard shortener response keys
+        const targetApi = `https://${sh.dashboard_url}/api?api=${sh.api_key}&url=${encodeURIComponent(originalLink)}`;
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetApi)}`;
+        
+        let shortLink = null;
+        try {
+          const res = await fetch(proxyUrl);
+          const text = await res.text();
+          const json = JSON.parse(text);
+          shortLink = json.shortenedUrl || json.shortened_url || json.shortUrl || json.short_url || json.url;
+        } catch(e) {
+          console.warn("Proxy execution failed, redirecting natively", e);
+        }
 
-        if (json.status === "success") {
-          let shortLink = json.shortenedUrl || json.shortened_url;
+        if (shortLink && shortLink.startsWith("http")) {
           referrersFormSubmit(shortLink);
         } else {
           referrersFormSubmit(originalLink);
@@ -593,22 +647,121 @@
 
         if (res.documents.length > 0) {
           const user = res.documents[0];
+          
+          // Check for Expiration
           const now = new Date();
           const expiry = new Date(user.expires_at);
-
-          if (expiry > now) {
-            const ep = await databases.getDocument(DB_ID, 'episodes', epId);
-            referrersFormSubmit(ep.original_link);
-            closeModal();
-          } else {
+          if (now > expiry) {
+            await databases.deleteDocument(DB_ID, 'premiumusers', user.$id);
             alert("Your premium access has expired.");
+            return;
           }
+
+          // Single session lock Generation
+          const sessionToken = Math.random().toString(36).substring(2) + Date.now();
+          await databases.updateDocument(DB_ID, 'premiumusers', user.$id, {
+            active_session: sessionToken
+          });
+
+          localStorage.setItem("premium_gmail", gmail);
+          localStorage.setItem("premium_session_token", sessionToken);
+
+          updateAuthUI();
+          
+          const ep = await databases.getDocument(DB_ID, 'episodes', epId);
+          referrersFormSubmit(ep.original_link);
+          closeModal();
         } else {
           alert("Invalid Gmail or Password.");
         }
       } catch(err) {
         alert("Verification route failed.");
       }
+    }
+
+    // Portal Global Authenticator UI controls
+    function updateAuthUI() {
+      const savedGmail = localStorage.getItem("premium_gmail");
+      const authBtn = document.getElementById("authBtn");
+      const statusText = document.getElementById("premiumStatusText");
+
+      if (savedGmail) {
+        statusText.innerText = `Premium: ${savedGmail.split("@")[0]}`;
+        authBtn.innerText = "Logout";
+        authBtn.style.background = "#e50914";
+      } else {
+        statusText.innerText = "";
+        authBtn.innerText = "Premium Login";
+        authBtn.style.background = "none";
+      }
+    }
+
+    function handleAuthAction() {
+      const savedGmail = localStorage.getItem("premium_gmail");
+      if (savedGmail) {
+        logoutPremium();
+      } else {
+        showModal(`
+          <span class="close-modal" onclick="closeModal()">&times;</span>
+          <h3>Premium portal Access</h3>
+          <p style="margin-bottom:15px; color:#aaa;">Enter premium Gmail & Password provided by admin</p>
+          <input type="email" id="portalGmail" placeholder="Enter Gmail ID">
+          <input type="password" id="portalPass" placeholder="Enter Password">
+          <button onclick="loginPortalPremium()">Sign In & Activate</button>
+        `);
+      }
+    }
+
+    async function loginPortalPremium() {
+      const gmail = document.getElementById("portalGmail").value.trim().toLowerCase();
+      const pass = document.getElementById("portalPass").value.trim();
+
+      if(!gmail || !pass) return alert("Fill in all credentials");
+
+      try {
+        const res = await databases.listDocuments(DB_ID, 'premiumusers', [
+          Appwrite.Query.equal('gmail', gmail),
+          Appwrite.Query.equal('password', pass)
+        ]);
+
+        if (res.documents.length > 0) {
+          const user = res.documents[0];
+          
+          // Check for Expiration
+          const now = new Date();
+          const expiry = new Date(user.expires_at);
+          if (now > expiry) {
+            await databases.deleteDocument(DB_ID, 'premiumusers', user.$id);
+            alert("Your premium access has expired.");
+            closeModal();
+            return;
+          }
+
+          // Session token Generation
+          const sessionToken = Math.random().toString(36).substring(2) + Date.now();
+          await databases.updateDocument(DB_ID, 'premiumusers', user.$id, {
+            active_session: sessionToken
+          });
+
+          localStorage.setItem("premium_gmail", gmail);
+          localStorage.setItem("premium_session_token", sessionToken);
+
+          updateAuthUI();
+          alert("Premium successfully activated on this browser!");
+          closeModal();
+        } else {
+          alert("Invalid Gmail or Password.");
+        }
+      } catch (e) {
+        alert("Verification route failed.");
+      }
+    }
+
+    function logoutPremium() {
+      localStorage.removeItem("premium_gmail");
+      localStorage.removeItem("premium_session_token");
+      updateAuthUI();
+      alert("Logged out of Premium profile.");
     }
 
     function openPaidRequestPrompt() {
