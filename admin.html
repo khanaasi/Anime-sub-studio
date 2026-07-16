@@ -269,7 +269,6 @@
         <button type="submit" class="btn-submit" id="saveEpBtn">Save Episode</button>
       </form>
 
-      <!-- LIVE EPISODES LIST & DELETE OPTION -->
       <h4 style="color:var(--primary); margin-bottom: 10px;">Current Episodes (Tap Delete to Remove):</h4>
       <div class="scroll-list" id="modalEpisodesContainer" style="max-height: 180px;"></div>
 
@@ -352,7 +351,6 @@
       document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
     }
 
-    // Direct Sanity Image Uploader
     async function uploadImageToSanity() {
       const fileInput = document.getElementById("postImageFile");
       const file = fileInput.files[0];
@@ -379,7 +377,7 @@
           statusEl.style.color = "#00b359";
           statusEl.innerText = "✅ Poster successfully uploaded & saved to Cloud!";
         } else {
-          throw new Error("Invalid response");
+          throw new Error("Invalid response received from Sanity");
         }
       } catch (err) {
         console.error(err);
@@ -398,32 +396,37 @@
         },
         body: JSON.stringify({ mutations })
       });
-      return await response.json();
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error.description || data.error.message || "Mutation failed");
+      }
+      return data;
     }
 
     async function refreshDashboard() {
       showSpinner(true);
       try {
-        const query = encodeURIComponent(`{
-          "posts": *[_type == "post"] | order(_updatedAt desc),
-          "shorteners": *[_type == "shortener"],
-          "premium": *[_type == "premiumuser"],
-          "paid": *[_type == "paidrequest"],
-          "settings": *[_type == "setting"]
-        }`);
+        // Safe Flat GROQ Query to bypass nested projection parsing errors
+        const query = encodeURIComponent(`*[_type in ["post", "shortener", "premiumuser", "paidrequest", "setting"]]`);
         const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
         
         const response = await fetch(url);
         const resData = await response.json();
-        const data = resData.result;
+        const rawResults = resData.result || [];
 
-        loadedPosts = data.posts;
+        const posts = rawResults.filter(d => d._type === "post").sort((a, b) => new Date(b._updatedAt) - new Date(a._updatedAt));
+        const shorteners = rawResults.filter(d => d._type === "shortener");
+        const premium = rawResults.filter(d => d._type === "premiumuser");
+        const paid = rawResults.filter(d => d._type === "paidrequest");
+        const settingsList = rawResults.filter(d => d._type === "setting");
+
+        loadedPosts = posts;
         databaseSettings = {};
-        data.settings.forEach(doc => {
+        settingsList.forEach(doc => {
           databaseSettings[doc.key] = doc.value;
         });
 
-        renderDashboard(data.posts, data.shorteners, data.premium, data.paid, databaseSettings);
+        renderDashboard(posts, shorteners, premium, paid, databaseSettings);
       } catch(err) {
         console.error("Dashboard Sync Failed", err);
       } finally {
@@ -583,7 +586,7 @@
         const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
         const response = await fetch(url);
         const resData = await response.json();
-        const episodes = resData.result;
+        const episodes = resData.result || [];
 
         if(episodes.length === 0) {
           container.innerHTML = "<p style='color:#777;text-align:center;padding:10px;'>No episodes added yet.</p>";
@@ -608,7 +611,7 @@
           alert("Episode deleted!");
           fetchModalEpisodes(postId);
         } catch(e) {
-          alert("Delete failed.");
+          alert("Delete failed: " + e.message);
         } finally {
           showSpinner(false);
         }
@@ -672,9 +675,10 @@
       };
 
       try {
+        // FIXED System Field Restriction by targeting custom attributes for touching parent
         await sanityMutate([
           { createOrReplace: payload },
-          { patch: { id: postId, set: { _updatedAt: new Date().toISOString() } } } // Touch logic
+          { patch: { id: postId, set: { last_updated: new Date().toISOString() } } }
         ]);
 
         alert("Episode successfully saved!");
@@ -700,7 +704,7 @@
           const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
           const response = await fetch(url);
           const resData = await response.json();
-          const episodes = resData.result;
+          const episodes = resData.result || [];
 
           const mutations = [{ delete: { id } }];
           episodes.forEach(ep => {
@@ -711,7 +715,7 @@
           alert("Successfully removed.");
           refreshDashboard();
         } catch(e) {
-          alert("Delete failed.");
+          alert("Delete failed: " + e.message);
         } finally {
           showSpinner(false);
         }
@@ -739,7 +743,7 @@
         document.getElementById("shortenerForm").reset();
         refreshDashboard();
       } catch(err) {
-        alert("Failed to save.");
+        alert("Failed to save: " + err.message);
       } finally {
         showSpinner(false);
       }
@@ -752,7 +756,7 @@
           await sanityMutate([{ delete: { id } }]);
           refreshDashboard();
         } catch(e) {
-          alert("Error deleting.");
+          alert("Error deleting: " + e.message);
         } finally {
           showSpinner(false);
         }
@@ -767,7 +771,8 @@
       showSpinner(true);
       try {
         const gmailClean = document.getElementById("premUser").value.trim().toLowerCase();
-        const id = 'premium-' + btoa(gmailClean).replace(/=/g, "");
+        // FIXED ID generation format to be alphanumeric safe for Sanity
+        const id = 'premium-' + Date.now();
         await sanityMutate([{
           createOrReplace: {
             _id: id,
@@ -782,7 +787,7 @@
         document.getElementById("premiumForm").reset();
         refreshDashboard();
       } catch(e) {
-        alert("Failed to register.");
+        alert("Failed to register: " + e.message);
       } finally {
         showSpinner(false);
       }
@@ -795,7 +800,7 @@
           await sanityMutate([{ delete: { id } }]);
           refreshDashboard();
         } catch(e) {
-          alert("Delete failed.");
+          alert("Delete failed: " + e.message);
         } finally {
           showSpinner(false);
         }
@@ -819,7 +824,7 @@
         document.getElementById("paidRequestsForm").reset();
         refreshDashboard();
       } catch(e) {
-        alert("Failed to save.");
+        alert("Failed to save: " + e.message);
       } finally {
         showSpinner(false);
       }
@@ -832,7 +837,7 @@
           await sanityMutate([{ delete: { id } }]);
           refreshDashboard();
         } catch(e) {
-          alert("Delete failed.");
+          alert("Delete failed: " + e.message);
         } finally {
           showSpinner(false);
         }
@@ -895,4 +900,4 @@
     function closeModal() { document.getElementById("modal").style.display = "none"; }
   </script>
 </body>
-          </html>
+</html>
