@@ -7,21 +7,29 @@
   <title>Anime Admin Panel</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    :root { --bg: #09090b; --panel: #121214; --primary: #e50914; --primary-hover: #b8070e; --text: #ffffff; --border: #222226; }
+    :root { 
+      --bg: #050507; 
+      --panel: #0c1410; 
+      --primary: #00ff66; /* Matching glowing green theme */
+      --primary-hover: #00cc52; 
+      --text: #ffffff; 
+      --border: rgba(0, 255, 102, 0.15); 
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-    body { background: var(--bg); color: var(--text); }
+    body { background: var(--bg); color: var(--text); position: relative; min-height: 100vh; overflow-x: hidden; }
     
     #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: none; justify-content: center; align-items: center; z-index: 10000; }
-    .login-box { background: var(--panel); padding: 40px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; border: 1px solid var(--border); }
-    .login-box h2 { color: var(--primary); margin-bottom: 25px; font-weight: 800; }
-    .login-box input { width: 100%; padding: 14px; margin-bottom: 20px; background: #1c1c21; border: 1px solid var(--border); color: white; border-radius: 8px; text-align: center; font-size: 16px; }
-    .login-box button { background: var(--primary); color: white; width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .login-box { background: var(--panel); padding: 40px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; border: 1px solid var(--border); box-shadow: 0 0 20px rgba(0,255,102,0.1); }
+    .login-box h2 { color: var(--primary); margin-bottom: 25px; font-weight: 800; text-shadow: 0 0 10px rgba(0,255,102,0.3); }
+    .login-box input { width: 100%; padding: 14px; margin-bottom: 20px; background: #0d1410; border: 1px solid var(--border); color: white; border-radius: 8px; text-align: center; font-size: 16px; outline: none; }
+    .login-box button { background: var(--primary); color: #000; width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .login-box button:hover { box-shadow: 0 0 15px rgba(0,255,102,0.4); }
 
     .header { background: var(--panel); padding: 15px 25px; display: flex; align-items: center; border-bottom: 1px solid var(--border); justify-content: space-between; }
     .header-left { display: flex; align-items: center; }
     .menu-toggle { font-size: 24px; cursor: pointer; margin-right: 20px; color: var(--primary); }
     .site-name { font-size: 20px; font-weight: bold; }
-    #sessionStatus { font-size: 13px; font-weight: bold; background: #1a1a1f; padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); }
+    #sessionStatus { font-size: 13px; font-weight: bold; background: #0d1410; padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); }
 
     .sidebar { position: fixed; left: -280px; top: 0; height: 100%; width: 280px; background: var(--panel); z-index: 999; transition: 0.3s; padding-top: 80px; border-right: 1px solid var(--border); }
     .sidebar.open { left: 0; }
@@ -29,23 +37,27 @@
     .sidebar-overlay.show { display: block; }
     .menu-item { display: flex; align-items: center; padding: 15px 25px; color: var(--text); text-decoration: none; cursor: pointer; font-size: 15px; font-weight: 500; }
     .menu-item i { margin-right: 15px; width: 20px; text-align: center; color: var(--primary); }
-    .menu-item:hover, .menu-item.active { background: rgba(229, 9, 20, 0.08); color: var(--primary); border-left: 4px solid var(--primary); }
+    .menu-item:hover, .menu-item.active { background: rgba(0, 255, 102, 0.08); color: var(--primary); border-left: 4px solid var(--primary); }
 
     .main-content { max-width: 800px; margin: 40px auto; padding: 0 20px; }
-    .section-card { background: var(--panel); padding: 35px; border-radius: 12px; border: 1px solid var(--border); display: none; }
+    .section-card { background: var(--panel); padding: 35px; border-radius: 12px; border: 1px solid var(--border); display: none; box-shadow: 0 5px 15px rgba(0, 255, 102, 0.03); }
     .section-card.active { display: block; }
-    .section-card h3 { border-bottom: 2px solid var(--primary); padding-bottom: 12px; margin-bottom: 25px; font-size: 22px; }
+    .section-card h3 { border-bottom: 2px solid var(--primary); padding-bottom: 12px; margin-bottom: 25px; font-size: 22px; text-shadow: 0 0 5px rgba(0, 255, 102, 0.2); }
 
     .form-group { margin-bottom: 22px; }
     .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #ccc; }
-    .form-control { width: 100%; padding: 12px 16px; background: #1a1a1f; border: 1px solid var(--border); border-radius: 8px; color: white; font-size: 15px; }
+    .form-control { width: 100%; padding: 12px 16px; background: #0d1410; border: 1px solid var(--border); border-radius: 8px; color: white; font-size: 15px; outline: none; }
+    .form-control:focus { border-color: var(--primary); }
     textarea.form-control { height: 120px; resize: none; }
-    .btn-submit { background: var(--primary); color: white; padding: 14px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
-    .btn-submit:disabled { background: #555; cursor: not-allowed; }
+    
+    .btn-submit { background: var(--primary); color: #000; padding: 14px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; transition: 0.2s; }
+    .btn-submit:hover:not(:disabled) { box-shadow: 0 0 15px rgba(0, 255, 102, 0.4); }
+    .btn-submit:disabled { background: #555; cursor: not-allowed; color: #aaa; }
 
-    .scroll-list { max-height: 350px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: #0f0f11; }
+    .scroll-list { max-height: 350px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: #050a07; }
     .list-item { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .delete-btn { background: #7c040a; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
+    .delete-btn { background: #7c040a; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
+    .delete-btn:hover { background: #b3060f; }
 
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1001; justify-content: center; align-items: center; padding: 20px; }
     .modal-box { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 500px; padding: 35px; position: relative; max-height: 90vh; overflow-y: auto; }
@@ -56,7 +68,7 @@
     
     .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10001; justify-content: center; align-items: center; font-size: 18px; font-weight: bold; color: white; }
     
-    .share-section { display: none; margin-top: 20px; background: #1c1c21; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
+    .share-section { display: none; margin-top: 20px; background: #0d1410; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
     .share-btn { display: inline-block; background: #1da1f2; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; margin-top: 10px; }
   </style>
 </head>
@@ -102,8 +114,8 @@
     <!-- 1. ADD POST -->
     <div id="addPostSec" class="section-card active">
       <h3>Add New Anime Post</h3>
-      <div class="form-group" style="background: rgba(229, 9, 20, 0.05); padding: 15px; border-radius: 8px; border: 1px dashed var(--primary); margin-bottom: 25px;">
-        <label style="color: #ffd700; font-weight: bold;"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto Text Analyzer Parser</label>
+      <div class="form-group" style="background: rgba(0, 255, 102, 0.05); padding: 15px; border-radius: 8px; border: 1px dashed var(--primary); margin-bottom: 25px;">
+        <label style="color: var(--primary); font-weight: bold;"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto Text Analyzer Parser</label>
         <textarea id="autoDetectInput" class="form-control" style="height: 120px; font-size: 13px;" placeholder="Pasted structured or unstructured text to autofill fields..." oninput="handleAutoDetect()"></textarea>
       </div>
 
@@ -145,7 +157,6 @@
     <!-- 2. SELECT POST (MANAGE EPISODES) -->
     <div id="selectPostSec" class="section-card">
       <h3>Manage Episodes</h3>
-      <!-- Dynamic Search Bar for Fast Filtering -->
       <div class="form-group" style="margin-bottom: 15px; position:relative;">
         <input type="text" id="episodeSearchInput" class="form-control" placeholder="🔍 Search Anime Series by Name..." oninput="filterEpisodeSelectionList()" style="padding-left:35px;">
         <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:15px; color:#777;"></i>
@@ -234,7 +245,7 @@
         </div>
         
         <div class="form-group" style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
-          <label style="color: #ffd700; font-weight: bold;"><i class="fa-solid fa-key"></i> Admin Panel Access Password</label>
+          <label style="color: var(--primary); font-weight: bold;"><i class="fa-solid fa-key"></i> Admin Panel Access Password</label>
           <input type="text" id="adminPanelPass" class="form-control" placeholder="Set password to lock this admin panel (Leave blank to keep it unlocked)">
           <small style="color: #777;">नोट: यदि आप इसे खाली छोड़ते हैं, तो password लॉक हट जाएगा aur panel sidhe khulega.</small>
         </div>
@@ -249,7 +260,7 @@
   <div class="modal" id="modal">
     <div class="modal-box">
       <span class="close-modal" onclick="closeModal()">&times;</span>
-      <h3 style="margin-bottom: 20px; line-height:1.4;">Add/Manage Episodes of:<br><span id="modalPostName" style="color:#e50914;"></span></h3>
+      <h3 style="margin-bottom: 20px; line-height:1.4;">Add/Manage Episodes of:<br><span id="modalPostName" style="color:var(--primary);"></span></h3>
       
       <form id="episodeForm" onsubmit="submitEpisode(event)" style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
         <input type="hidden" id="modalPostId">
@@ -258,7 +269,6 @@
           <label>Episode Number / Label (e.g. 01, ova 01, chapter 01, 01-06)</label>
           <input type="text" id="epLabel" class="form-control" placeholder="01" required>
         </div>
-        <!-- FIXED Dropdown for Quality selection -->
         <div class="form-group">
           <label>Quality</label>
           <select id="epQuality" class="form-control">
@@ -283,7 +293,7 @@
       <div class="scroll-list" id="modalEpisodesContainer" style="max-height: 180px;"></div>
 
       <div class="share-section" id="twitterShareBlock" style="margin-top:15px;">
-        <p style="color:#ffd700; margin-bottom:10px;">🌟 Share this episode update on Twitter!</p>
+        <p style="color:var(--primary); margin-bottom:10px;">🌟 Share this episode update on Twitter!</p>
         <a href="#" id="twitterShareBtn" target="_blank" class="share-btn"><i class="fa-brands fa-twitter"></i> Share on Twitter</a>
       </div>
     </div>
@@ -298,15 +308,73 @@
     let databaseSettings = {};
 
     window.onload = function() {
+      initStarfield();
       initSessionAndVerifyLock();
     };
+
+    function initStarfield() {
+      const canvas = document.createElement('canvas');
+      canvas.id = 'starfield';
+      canvas.style.position = 'fixed';
+      canvas.style.top = '0';
+      canvas.style.left = '0';
+      canvas.style.width = '100vw';
+      canvas.style.height = '100vh';
+      canvas.style.zIndex = '-1';
+      canvas.style.pointerEvents = 'none';
+      document.body.appendChild(canvas);
+
+      const ctx = canvas.getContext('2d');
+      let stars = [];
+      const numStars = 40;
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      for (let i = 0; i < numStars; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 1.5 + 0.5,
+          speed: Math.random() * 0.15 + 0.05,
+          alpha: Math.random(),
+          glow: Math.random() > 0.5
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let star of stars) {
+          star.y -= star.speed;
+          if (star.y < 0) {
+            star.y = canvas.height;
+            star.x = Math.random() * canvas.width;
+          }
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+          if (star.glow) {
+            ctx.fillStyle = `rgba(0, 255, 102, ${Math.sin(Date.now() * 0.001 + star.alpha) * 0.4 + 0.5})`;
+          } else {
+            ctx.fillStyle = `rgba(255, 255, 255, ${Math.sin(Date.now() * 0.001 + star.alpha) * 0.3 + 0.4})`;
+          }
+          ctx.fill();
+        }
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
 
     async function initSessionAndVerifyLock() {
       showSpinner(true);
       const statusEl = document.getElementById("sessionStatus");
       try {
         const query = encodeURIComponent(`*[_type == "setting"]`);
-        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        // Real-time bypass endpoint (api.sanity.io) with cache-busting timestamp
+        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         
         const response = await fetch(url);
         const resData = await response.json();
@@ -367,7 +435,7 @@
 
       const statusEl = document.getElementById("uploadStatus");
       statusEl.style.display = "block";
-      statusEl.style.color = "#ffd700";
+      statusEl.style.color = "var(--primary)";
       statusEl.innerText = "⏳ Poster uploading to Sanity Cloud...";
 
       try {
@@ -424,7 +492,7 @@
       showSpinner(true);
       try {
         const query = encodeURIComponent(`*[_type in ["post", "shortener", "premiumuser", "paidrequest", "setting"]]`);
-        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         
         const response = await fetch(url);
         const resData = await response.json();
@@ -519,7 +587,6 @@
       });
     }
 
-    // ORIGINAL Auto-detect parser code with exact single-quotes regex matching to prevent escape sequence breakdown!
     function handleAutoDetect() {
       const text = document.getElementById("autoDetectInput").value.trim();
       if (!text) return;
@@ -615,7 +682,7 @@
       container.innerHTML = "<p style='color:#777;text-align:center;'>Loading...</p>";
       try {
         const query = encodeURIComponent(`*[_type == "episode" && post_id == "${postId}"]`);
-        const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
         const response = await fetch(url);
         const resData = await response.json();
         const episodes = resData.result || [];
@@ -732,7 +799,7 @@
         showSpinner(true);
         try {
           const query = encodeURIComponent(`*[_type == "episode" && post_id == "${id}"]`);
-          const url = `https://${SANITY_PROJECT_ID}.apicdn.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
+          const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
           const response = await fetch(url);
           const resData = await response.json();
           const episodes = resData.result || [];
