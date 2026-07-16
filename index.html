@@ -188,7 +188,10 @@
 <body>
 
   <div class="header">
-    <span class="logo" onclick="navigateToHome()">AnimeStudio</span>
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <span class="menu-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></span>
+      <span class="logo" onclick="navigateToHome()">AnimeStudio</span>
+    </div>
     <div class="search-bar">
       <input type="text" id="searchInput" placeholder="Search by name or genre..." oninput="searchPosts()">
       <i class="fa-solid fa-magnifying-glass"></i>
@@ -196,8 +199,7 @@
     <div class="header-right">
       <!-- Premium authentication UI element inside default header container safely -->
       <span id="premiumUserStatus" style="font-size: 12px; font-weight: bold; color: #ffd700; margin-right: 10px; display: none;"></span>
-      <span id="authBtn" onclick="handleAuthAction()" style="cursor: pointer; font-size: 13px; font-weight: bold; color: var(--primary); margin-right: 12px; border: 1px solid var(--border); padding: 5px 12px; border-radius: 20px;">Premium Login</span>
-      <span class="menu-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></span>
+      <span id="authBtn" onclick="handleAuthAction()" style="cursor: pointer; font-size: 13px; font-weight: bold; color: var(--primary); border: 1px solid var(--border); padding: 5px 12px; border-radius: 20px;">Premium Login</span>
     </div>
   </div>
 
@@ -588,9 +590,10 @@
 
     async function solveShortener(epId) {
       showModal(`<h3>Shortening Link...</h3><p>Connecting with server routing, please wait...</p>`);
+      let originalLink = null;
       try {
         const ep = await databases.getDocument(DB_ID, 'episodes', epId);
-        let originalLink = ep.original_link;
+        originalLink = ep.original_link;
 
         if (!originalLink) {
           alert("Error: Link missing.");
@@ -625,19 +628,45 @@
         // Dynamic Host Domain Filter Parser
         const cleanDomain = sh.dashboard_url.replace(/^(https?:\/\/)?(www\.)?/, "").split('/')[0];
         
-        const targetApi = `https://${cleanDomain}/api?api=${sh.api_key}&url=${encodeURIComponent(originalLink)}`;
-        // Correct official JSON wrap-up to secure 100% CORS parsing
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetApi)}`;
+        // Added &format=text for better JSON API compatibility
+        const targetApi = `https://${cleanDomain}/api?api=${sh.api_key}&url=${encodeURIComponent(originalLink)}&format=text`;
         
         let shortLink = null;
+        
         try {
-          const res = await fetch(proxyUrl);
-          const data = await res.json();
-          // parse wrapped response contents securely
-          const json = JSON.parse(data.contents);
-          shortLink = json.shortenedUrl || json.shortened_url || json.shortUrl || json.short_url || json.url;
+          // Step 1: Pehle direct fetch try karo
+          const res = await fetch(targetApi);
+          const textData = await res.text();
+          
+          try {
+            const json = JSON.parse(textData);
+            shortLink = json.shortenedUrl || json.shortened_url || json.shortUrl || json.short_url || json.url || json.link;
+          } catch(parseErr) {
+            // Agar JSON nahi hai, text link return hui hai
+            if (textData.trim().startsWith("http")) {
+              shortLink = textData.trim();
+            }
+          }
         } catch(e) {
-          console.warn("Proxy execution failed, redirecting natively", e);
+          console.warn("Direct fetch blocked (CORS), trying proxy...", e);
+          
+          // Step 2: Fallback Proxy (Agar Cloudflare block na kare)
+          const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetApi)}`;
+          try {
+            const proxyRes = await fetch(proxyUrl);
+            const proxyData = await proxyRes.json();
+            
+            try {
+              const json = JSON.parse(proxyData.contents);
+              shortLink = json.shortenedUrl || json.shortened_url || json.shortUrl || json.short_url || json.url || json.link;
+            } catch(proxyParseErr) {
+              if(proxyData.contents && proxyData.contents.trim().startsWith("http")) {
+                shortLink = proxyData.contents.trim();
+              }
+            }
+          } catch (finalErr) {
+            console.error("Proxy request completely failed:", finalErr);
+          }
         }
 
         if (shortLink && shortLink.startsWith("http")) {
@@ -647,7 +676,10 @@
         }
         closeModal();
       } catch (e) {
-        referrersFormSubmit(originalLink);
+        console.error("Shortener API failed", e);
+        if (originalLink) {
+          referrersFormSubmit(originalLink);
+        }
         closeModal();
       }
     }
