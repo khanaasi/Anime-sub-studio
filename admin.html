@@ -1,4 +1,3 @@
---- START OF FILE Anime-sub-studio-main/admin.html ---
 <!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -10,7 +9,7 @@
     :root { 
       --bg: #050507; 
       --panel: #0c1410; 
-      --primary: #00ff66; /* Matching glowing green theme */
+      --primary: #00ff66; 
       --primary-hover: #00cc52; 
       --text: #ffffff; 
       --border: rgba(0, 255, 102, 0.15); 
@@ -373,8 +372,8 @@
       const statusEl = document.getElementById("sessionStatus");
       try {
         const query = encodeURIComponent(`*[_type == "setting"]`);
-        // Real-time bypass endpoint (api.sanity.io) with cache-busting timestamp
-        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
+        // corrected URL using official live endpoint
+        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
         
         const response = await fetch(url);
         const resData = await response.json();
@@ -463,7 +462,6 @@
       }
     }
 
-    // Dynamic instant synchronous mutations
     async function sanityMutate(mutations) {
       const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/mutate/${SANITY_DATASET}?visibility=sync`;
       const response = await fetch(url, {
@@ -492,7 +490,8 @@
       showSpinner(true);
       try {
         const query = encodeURIComponent(`*[_type in ["post", "shortener", "premiumuser", "paidrequest", "setting"]]`);
-        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
+        // corrected URL using official live endpoint
+        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
         
         const response = await fetch(url);
         const resData = await response.json();
@@ -682,7 +681,8 @@
       container.innerHTML = "<p style='color:#777;text-align:center;'>Loading...</p>";
       try {
         const query = encodeURIComponent(`*[_type == "episode" && post_id == "${postId}"]`);
-        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
+        // corrected URL using official live endpoint
+        const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
         const response = await fetch(url);
         const resData = await response.json();
         const episodes = resData.result || [];
@@ -799,7 +799,8 @@
         showSpinner(true);
         try {
           const query = encodeURIComponent(`*[_type == "episode" && post_id == "${id}"]`);
-          const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}&_cb=${Date.now()}`;
+          // corrected URL using official live endpoint
+          const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2021-06-07/data/query/${SANITY_DATASET}?query=${query}`;
           const response = await fetch(url);
           const resData = await response.json();
           const episodes = resData.result || [];
